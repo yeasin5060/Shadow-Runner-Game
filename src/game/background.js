@@ -60,40 +60,26 @@ export class ParallaxBackground {
       });
     }
 
-    // 4. Magical Bioluminescent Fireflies (জোনাকি পোকা)
+    // 4. Delicate Bioluminescent Fireflies (আসল জোনাকি পোকা - কোনো বাবল বা বৃত্ত নয়)
     this.fireflies = [];
-    for (let i = 0; i < 42; i++) {
+    for (let i = 0; i < 36; i++) {
       this.fireflies.push({
         x: Math.random() * canvasWidth,
         y: 60 + Math.random() * (groundY - 70),
-        size: 1.2 + Math.random() * 2.2,
-        driftX: 0.25 + Math.random() * 0.6,
+        size: 1.2 + Math.random() * 1.5,
+        driftX: 0.2 + Math.random() * 0.45,
         hoverFreq: 1.2 + Math.random() * 2.5,
-        hoverAmp: 0.8 + Math.random() * 1.6,
+        hoverAmp: 0.6 + Math.random() * 1.2,
         hoverOffset: Math.random() * Math.PI * 2,
-        pulseSpeed: 1.8 + Math.random() * 3.2,
+        pulseSpeed: 2.0 + Math.random() * 3.0,
         pulseOffset: Math.random() * Math.PI * 2,
-        maxAlpha: 0.5 + Math.random() * 0.5,
-        colorType: Math.random() < 0.75 ? 'lime' : 'gold',
+        wingFreq: 22 + Math.random() * 12,
+        maxAlpha: 0.6 + Math.random() * 0.4,
+        colorType: Math.random() < 0.7 ? 'lime' : 'gold',
       });
     }
 
-    // 5. Chimney Smoke from Cottages
-    this.chimneySmoke = [];
-    for (let i = 0; i < 18; i++) {
-      this.chimneySmoke.push({
-        x: Math.random() * canvasWidth,
-        y: groundY - 50 - Math.random() * 60,
-        vx: -0.6 - Math.random() * 0.7,
-        vy: -0.8 - Math.random() * 0.6,
-        size: 3 + Math.random() * 6,
-        alpha: 0.15 + Math.random() * 0.25,
-        life: Math.random() * 2.5,
-        maxLife: 2.5,
-      });
-    }
-
-    // 6. Terrain Geological Stratification Pebbles & Flagstones
+    // 5. Terrain Geological Stratification Pebbles & Flagstones
     this.groundPebbles = [];
     for (let i = 0; i < 35; i++) {
       this.groundPebbles.push({
@@ -139,28 +125,12 @@ export class ParallaxBackground {
     // Update Fireflies (জোনাকি পোকা) with organic sinusoidal flight
     const now = Date.now() / 1000;
     for (const f of this.fireflies) {
-      f.x -= f.driftX + gameSpeed * 0.18;
-      f.y += Math.sin(now * f.hoverFreq + f.hoverOffset) * 0.6;
+      f.x -= f.driftX + gameSpeed * 0.15;
+      f.y += Math.sin(now * f.hoverFreq + f.hoverOffset) * 0.5;
 
       if (f.x < -15) {
-        f.x = this.width + 20 + Math.random() * 50;
+        f.x = this.width + 15 + Math.random() * 40;
         f.y = 50 + Math.random() * (this.groundY - 60);
-      }
-    }
-
-    // Chimney smoke
-    for (const smoke of this.chimneySmoke) {
-      smoke.x += smoke.vx - gameSpeed * 0.35;
-      smoke.y += smoke.vy;
-      smoke.size += dt * 3.5;
-      smoke.alpha -= dt * 0.1;
-      smoke.life -= dt;
-      if (smoke.life <= 0 || smoke.alpha <= 0) {
-        smoke.x = Math.random() * this.width;
-        smoke.y = this.groundY - 55;
-        smoke.size = 3;
-        smoke.alpha = 0.28;
-        smoke.life = 2.2;
       }
     }
   }
@@ -215,21 +185,10 @@ export class ParallaxBackground {
     // 8. Layer 3: Realistic Midground with Trees, Foliage, Cottages & Pagodas
     this.drawHomesAndTrees(ctx, this.offsetLayer3, gy, levelTheme);
 
-    // 9. Chimney Smoke Wisps
-    ctx.save();
-    for (const smoke of this.chimneySmoke) {
-      ctx.globalAlpha = Math.max(0, smoke.alpha);
-      ctx.fillStyle = '#cbd5e1';
-      ctx.beginPath();
-      ctx.arc(smoke.x, smoke.y, smoke.size, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-
-    // 10. Glowing Bioluminescent Fireflies (জোনাকি পোকা) Hovering in the Air
+    // 9. Delicate Bioluminescent Fireflies (আসল জোনাকি পোকা - বাবল মুক্ত)
     this.drawFireflies(ctx);
 
-    // 11. Realistic Stratified Earth Land (মাটি, পাথুরে স্তর ও দোলায়মান ঘাস)
+    // 10. Realistic Stratified Earth Land (মাটি, পাথুরে স্তর ও দোলায়মান ঘাস)
     this.drawRealisticLand(ctx, w, h, gy, levelTheme);
   }
 
@@ -468,7 +427,7 @@ export class ParallaxBackground {
     ctx.restore(); // End moon transform
   }
 
-  // Draw Glowing Bioluminescent Fireflies (জোনাকি পোকা)
+  // Draw Delicate Bioluminescent Fireflies (আসল জোনাকি পোকা - বাস্তব ডানা ও বায়োলুমিনেসেন্স, কোনো বাবল নয়)
   drawFireflies(ctx) {
     const now = Date.now() / 1000;
     ctx.save();
@@ -476,31 +435,42 @@ export class ParallaxBackground {
     for (const f of this.fireflies) {
       // Natural organic breathing pulse
       const pulse = Math.sin(now * f.pulseSpeed + f.pulseOffset);
-      const alpha = Math.max(0.12, Math.pow((pulse + 1) / 2, 2) * f.maxAlpha);
+      const intensity = Math.pow((pulse + 1) / 2, 2.5);
+      const alpha = Math.max(0.15, intensity * f.maxAlpha);
 
-      // Colors: Lime Green (#bef264) or Warm Golden Amber (#fde047)
-      const coreColor = f.colorType === 'lime' ? '#bef264' : '#fef08a';
-      const glowColor = f.colorType === 'lime' ? 'rgba(163, 230, 53, 0.45)' : 'rgba(250, 204, 21, 0.45)';
+      // Warm authentic firefly colors: Neon Chartreuse Lime or Warm Golden Spark
+      const glowColor = f.colorType === 'lime' ? '#bef264' : '#fef08a';
+      const bodyColor = '#1f2421'; // Natural dark insect cuticle
 
-      // Outer soft aura glow
-      const haloRadius = f.size * 5.5;
-      const haloGrad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, haloRadius);
-      haloGrad.addColorStop(0, glowColor);
-      haloGrad.addColorStop(1, 'transparent');
+      ctx.save();
+      ctx.translate(f.x, f.y);
 
+      // Rapidly fluttering translucent micro-wings (25Hz)
+      const wingFlap = Math.sin(now * f.wingFreq);
+      ctx.fillStyle = `rgba(220, 240, 255, ${alpha * 0.45})`;
+      ctx.beginPath();
+      ctx.ellipse(-0.5, -2, 2.2, 0.9, wingFlap * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(-0.5, 2, 2.2, 0.9, -wingFlap * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Tiny insect body (head & thorax)
+      ctx.fillStyle = bodyColor;
+      ctx.beginPath();
+      ctx.ellipse(0.6, 0, 1.2, 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Glowing bioluminescent abdomen lantern (sharp point light, no giant bubble disc)
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = haloGrad;
+      ctx.fillStyle = glowColor;
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 5 + intensity * 6; // Focused point light glow
       ctx.beginPath();
-      ctx.arc(f.x, f.y, haloRadius, 0, Math.PI * 2);
+      ctx.arc(-0.8, 0, f.size * 0.85, 0, Math.PI * 2);
       ctx.fill();
 
-      // Sharp glowing firefly body
-      ctx.fillStyle = coreColor;
-      ctx.shadowColor = coreColor;
-      ctx.shadowBlur = 9;
-      ctx.beginPath();
-      ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.restore();
     }
 
     ctx.restore();

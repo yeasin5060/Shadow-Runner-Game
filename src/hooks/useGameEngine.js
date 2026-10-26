@@ -188,8 +188,13 @@ export function useGameEngine() {
     if (!ctx) return;
 
     if (!engine.isRunning) {
-      // Still draw background & player idle in menu or paused
+      // Still draw background & player idle breathing in menu or paused
+      const dtIdle = Math.min((timestamp - (engine.lastTime || timestamp)) / 1000, 0.05);
+      engine.lastTime = timestamp;
+
       if (engine.background && engine.player) {
+        engine.background.update(0.4, dtIdle);
+        engine.player.idleTimer += dtIdle;
         engine.background.draw(ctx, engine.score ? engine.score.currentLevel.bgTheme : {
           skyGradient: ['#070712', '#151028', '#23153c'],
           mountainColor: '#0f0c1d',
