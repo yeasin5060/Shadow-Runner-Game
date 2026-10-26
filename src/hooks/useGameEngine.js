@@ -447,24 +447,34 @@ export function useGameEngine() {
     };
   }, [gameState, triggerJump, triggerSlide, triggerStopSlide, togglePause, startGame, showToast]);
 
-  // Resize canvas handling
+  // Multi-phase mobile orientation and viewport resize adaptation
   useEffect(() => {
     const handleResize = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
       // Full viewport width and height
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const w = window.innerWidth || document.documentElement.clientWidth;
+      const h = window.innerHeight || document.documentElement.clientHeight;
       canvas.width = w;
       canvas.height = h;
 
-      const groundY = Math.max(160, h - Math.min(110, Math.floor(h * 0.22)));
+      // Detect mobile orientation: Landscape (wide) vs Portrait (tall)
+      const isLandscape = w > h;
+      const groundMargin = isLandscape
+        ? Math.min(85, Math.max(55, Math.floor(h * 0.18)))
+        : Math.min(145, Math.max(90, Math.floor(h * 0.24)));
+
+      const groundY = Math.max(130, h - groundMargin);
+
       if (engineRef.current.player) {
         engineRef.current.player.canvasWidth = w;
         engineRef.current.player.canvasHeight = h;
         engineRef.current.player.groundY = groundY;
-        engineRef.current.player.x = Math.max(50, Math.min(120, Math.floor(w * 0.15)));
+        engineRef.current.player.x = Math.max(50, Math.min(140, Math.floor(w * (isLandscape ? 0.14 : 0.18))));
+        if (engineRef.current.player.isGrounded) {
+          engineRef.current.player.y = groundY - engineRef.current.player.height;
+        }
       }
       if (engineRef.current.background) {
         engineRef.current.background.resize(w, h, groundY);
@@ -472,11 +482,34 @@ export function useGameEngine() {
     };
 
     handleResize();
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
+
+    // Multi-phase handler for mobile browsers to catch URL bar & orientation calibration
+    const onMobileRotate = () => {
+      handleResize();
+      setTimeout(handleResize, 60);
+      setTimeout(handleResize, 180);
+      setTimeout(handleResize, 380);
+    };
+
+    window.addEventListener('resize', onMobileRotate);
+    window.addEventListener('orientationchange', onMobileRotate);
+
+    if (window.screen && window.screen.orientation) {
+      window.screen.orientation.addEventListener('change', onMobileRotate);
+    }
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', onMobileRotate);
+    }
+
     return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
+      window.removeEventListener('resize', onMobileRotate);
+      window.removeEventListener('orientationchange', onMobileRotate);
+      if (window.screen && window.screen.orientation) {
+        window.screen.orientation.removeEventListener('change', onMobileRotate);
+      }
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', onMobileRotate);
+      }
     };
   }, []);
 

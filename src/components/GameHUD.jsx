@@ -151,24 +151,24 @@ export function GameHUD({
       </div>
 
       {/* Bottom Controls / Mobile Touch Action Buttons */}
-      <div className="flex items-end justify-between w-full pointer-events-auto pb-2 sm:pb-4">
+      <div className="flex items-end justify-between w-full pointer-events-auto pb-1 sm:pb-3">
         {/* Left: Slide / Duck Button (Mobile) */}
         <button
           onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); onSlide?.(); }}
           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); onStopSlide?.(); }}
           onMouseDown={(e) => { e.stopPropagation(); onSlide?.(); }}
           onMouseUp={(e) => { e.stopPropagation(); onStopSlide?.(); }}
-          className="glass-panel w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1 active:scale-90 active:bg-cyan-500/30 transition-all border-2 border-cyan-500/50 hover:border-cyan-400 shadow-cyan text-cyan-300"
-          title="Slide"
+          className="glass-panel w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1 active:scale-90 active:bg-cyan-500/30 transition-all border-2 border-cyan-500/50 hover:border-cyan-400 shadow-cyan text-cyan-300 shrink-0"
+          title="Slide (↓ / S)"
         >
-          <ArrowDown className="w-6 h-6 sm:w-7 sm:h-7" />
-          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Slide</span>
+          <ArrowDown className="w-5 h-5 sm:w-7 sm:h-7" />
+          <span className="text-[9px] sm:text-xs font-bold uppercase tracking-wider">Slide</span>
         </button>
 
         {/* Controls Hint for Desktop */}
         <div className="hidden md:flex items-center gap-4 text-xs text-gray-400 glass-panel px-4 py-2 rounded-xl pointer-events-none">
           <span><kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-200 font-mono">CLICK / SPACE</kbd> Jump</span>
-          <span><kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-200 font-mono">2x</kbd> Double Jump</span>
+          <span><kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-200 font-mono">2x</kbd> Somersault 360°</span>
           <span><kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-200 font-mono">↓ / S</kbd> Slide</span>
           <span><kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-200 font-mono">P</kbd> Pause</span>
         </div>
@@ -177,11 +177,11 @@ export function GameHUD({
         <button
           onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); onJump?.(); }}
           onClick={(e) => { e.stopPropagation(); onJump?.(); }}
-          className="glass-panel w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex flex-col items-center justify-center gap-1 active:scale-90 active:bg-purple-500/40 transition-all border-2 border-purple-500/60 hover:border-purple-400 shadow-purple text-purple-300"
-          title="Jump / Double Jump"
+          className="glass-panel w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1 active:scale-90 active:bg-purple-500/40 transition-all border-2 border-purple-500/60 hover:border-purple-400 shadow-purple text-purple-300 shrink-0"
+          title="Jump / Double Jump 360°"
         >
-          <ArrowUp className="w-8 h-8 sm:w-9 sm:h-9" />
-          <span className="text-xs sm:text-sm font-game font-bold uppercase tracking-wider">Jump</span>
+          <ArrowUp className="w-6 h-6 sm:w-8 sm:h-8" />
+          <span className="text-[11px] sm:text-sm font-game font-bold uppercase tracking-wider">Jump</span>
         </button>
       </div>
     </div>
