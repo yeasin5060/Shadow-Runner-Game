@@ -646,56 +646,71 @@ export class Player {
     ctx.restore();
   }
 
-  // Draw Realistic Articulated Cyber Shinobi (Anatomy, Armor, Forehead Guard & Weapon)
+  // Draw Realistic Articulated Cyber Shinobi with Olympic Sprint Biomechanics & Stride Bounce
   drawArticulatedShinobi(ctx, hw, hh, skinColor, accentColor) {
     const isMoving = this.animTimer > 0;
     const phase = isMoving ? this.animTimer : 0;
     const idleBreathing = Math.sin(this.idleTimer * 2.6) * 1.2;
 
+    // Biomechanical Sprint Vertical Oscillation (দৌড়ের সময় প্রাকৃতিক উল্লম্ব বাউন্স)
+    const runBounce = (isMoving && this.isGrounded) ? Math.sin(phase * 2) * 3.4 : 0;
+
     // Running Stride Kinematics
     const legL = Math.sin(phase);
     const legR = Math.sin(phase + Math.PI);
-    const kneeL = Math.max(0, -Math.cos(phase)) * 24;
-    const kneeR = Math.max(0, -Math.cos(phase + Math.PI)) * 24;
+    // Deep knee tuck during recovery swing (পা গুটিয়ে সামনের দিকে নিয়ে আসার গভীর ভাঁজ)
+    const kneeBendL = this.isGrounded ? (isMoving ? Math.max(0, -Math.cos(phase)) * 42 : 12) : 22;
+    const kneeBendR = this.isGrounded ? (isMoving ? Math.max(0, -Math.cos(phase + Math.PI)) * 42 : 12) : 22;
 
     // ==========================================
-    // A. BACK LEG (Left Leg)
+    // A. BACK LEG (Left Leg - Dynamic Push-Off & Recovery Swing)
     // ==========================================
     ctx.save();
     const hipLX = -4;
-    const hipLY = 4 + (isMoving ? 0 : idleBreathing * 0.4);
-    const thighAngleL = this.isGrounded ? (isMoving ? legL * 0.72 : -0.15) : -0.32;
-    const kneeLX = hipLX + Math.sin(thighAngleL) * 15;
-    const kneeLY = hipLY + Math.cos(thighAngleL) * 15;
-    const footLX = kneeLX + Math.sin(thighAngleL + (isMoving ? kneeL * 0.03 : 0.2)) * 16;
-    const footLY = kneeLY + Math.cos(thighAngleL + (isMoving ? kneeL * 0.03 : 0.2)) * 16;
+    const hipLY = 4 + (isMoving ? runBounce : idleBreathing * 0.4);
+    const thighAngleL = this.isGrounded ? (isMoving ? legL * 0.82 : -0.15) : -0.32;
+    const kneeLX = hipLX + Math.sin(thighAngleL) * 16;
+    const kneeLY = hipLY + Math.cos(thighAngleL) * 16;
 
-    // Dark Ninja Shinobi Pants
+    // Dynamic Shin angle driven by knee flexion
+    const shinAngleL = thighAngleL + kneeBendL * (Math.PI / 180);
+    const footLX = kneeLX + Math.sin(shinAngleL) * 17;
+    const footLY = kneeLY + Math.cos(shinAngleL) * 17;
+
+    // Muscular Thigh
     ctx.beginPath();
     ctx.moveTo(hipLX, hipLY);
     ctx.lineTo(kneeLX, kneeLY);
-    ctx.lineTo(footLX, footLY);
-    ctx.lineWidth = 6.5;
+    ctx.lineWidth = 7.5;
     ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#080812';
+    ctx.strokeStyle = '#080814';
     ctx.stroke();
 
-    // Back Tabi Boot
+    // Shin with Kyahan Leg Wraps
+    ctx.beginPath();
+    ctx.moveTo(kneeLX, kneeLY);
+    ctx.lineTo(footLX, footLY);
+    ctx.lineWidth = 6.2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#06060e';
+    ctx.stroke();
+
+    // Back Tabi Boot with Dynamic Toe Angle
+    const footTiltL = legL > 0 ? 0.35 : -0.25;
     ctx.fillStyle = '#05050a';
     ctx.beginPath();
-    ctx.ellipse(footLX + 3, footLY + 1, 6, 3, 0.1, 0, Math.PI * 2);
+    ctx.ellipse(footLX + 3, footLY + 1, 6.5, 3.2, footTiltL, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
     // ==========================================
-    // B. CYBER NINJATO (Ninja Sword on Back with Plasma Edge)
+    // B. CYBER NINJATO (Ninja Sword on Back with Glowing Edge)
     // ==========================================
     ctx.save();
     const swordBaseX = -hw + 4;
-    const swordBaseY = -hh + 34;
+    const swordBaseY = -hh + 34 + (isMoving ? runBounce * 0.7 : 0);
     const swordTipX = hw - 2;
-    const swordTipY = -hh - 8;
+    const swordTipY = -hh - 8 + (isMoving ? runBounce * 0.7 : 0);
 
     // Scabbard (Saya)
     ctx.strokeStyle = '#05050c';
@@ -731,7 +746,7 @@ export class Player {
     // ==========================================
     // C. TORSO & SEGMENTED TACTICAL SHINOBI ARMOR
     // ==========================================
-    const torsoY = -hh + 17 + (isMoving ? 0 : idleBreathing);
+    const torsoY = -hh + 17 + (isMoving ? runBounce : idleBreathing);
 
     // Dark Undergarment Tunic
     ctx.fillStyle = '#0a0a14';
@@ -782,22 +797,24 @@ export class Player {
     ctx.fillRect(hw - 15, torsoY + 21.5, 4, 4);
 
     // ==========================================
-    // D. FRONT LEG (Right Leg - with Shin Guards & Tabi Boots)
+    // D. FRONT LEG (Right Leg - Ground Strike & High Knee Drive)
     // ==========================================
     ctx.save();
     const hipRX = 4;
-    const hipRY = 4 + (isMoving ? 0 : idleBreathing * 0.4);
-    const thighAngleR = this.isGrounded ? (isMoving ? legR * 0.72 : 0.18) : 0.42;
-    const kneeRX = hipRX + Math.sin(thighAngleR) * 15;
-    const kneeRY = hipRY + Math.cos(thighAngleR) * 15;
-    const footRX = kneeRX + Math.sin(thighAngleR + (isMoving ? kneeR * 0.03 : 0.1)) * 16;
-    const footRY = kneeRY + Math.cos(thighAngleR + (isMoving ? kneeR * 0.03 : 0.1)) * 16;
+    const hipRY = 4 + (isMoving ? runBounce : idleBreathing * 0.4);
+    const thighAngleR = this.isGrounded ? (isMoving ? legR * 0.82 : 0.18) : 0.42;
+    const kneeRX = hipRX + Math.sin(thighAngleR) * 16;
+    const kneeRY = hipRY + Math.cos(thighAngleR) * 16;
+
+    const shinAngleR = thighAngleR + kneeBendR * (Math.PI / 180);
+    const footRX = kneeRX + Math.sin(shinAngleR) * 17;
+    const footRY = kneeRY + Math.cos(shinAngleR) * 17;
 
     // Muscular Thigh & Haidate Plate
     ctx.beginPath();
     ctx.moveTo(hipRX, hipRY);
     ctx.lineTo(kneeRX, kneeRY);
-    ctx.lineWidth = 7.5;
+    ctx.lineWidth = 8;
     ctx.lineCap = 'round';
     ctx.strokeStyle = '#141426';
     ctx.stroke();
@@ -807,14 +824,14 @@ export class Player {
     ctx.shadowColor = skinColor;
     ctx.shadowBlur = 8;
     ctx.beginPath();
-    ctx.arc(kneeRX, kneeRY, 3.5, 0, Math.PI * 2);
+    ctx.arc(kneeRX, kneeRY, 3.6, 0, Math.PI * 2);
     ctx.fill();
 
     // Lower Shin with Kyahan Leg Wraps
     ctx.beginPath();
     ctx.moveTo(kneeRX, kneeRY);
     ctx.lineTo(footRX, footRY);
-    ctx.lineWidth = 6.5;
+    ctx.lineWidth = 6.8;
     ctx.lineCap = 'round';
     ctx.strokeStyle = '#0f0f1c';
     ctx.stroke();
@@ -828,9 +845,10 @@ export class Player {
     ctx.stroke();
 
     // Split-Toe Ninja Tabi Boot with High-Traction Carbon Sole
+    const footTiltR = legR > 0 ? 0.35 : -0.25;
     ctx.fillStyle = '#06060c';
     ctx.beginPath();
-    ctx.ellipse(footRX + 4, footRY + 1.5, 7, 3.5, 0.1, 0, Math.PI * 2);
+    ctx.ellipse(footRX + 4, footRY + 1.5, 7.5, 3.6, footTiltR, 0, Math.PI * 2);
     ctx.fill();
 
     // Tabi Sole Accent Line
@@ -843,10 +861,10 @@ export class Player {
     ctx.restore();
 
     // ==========================================
-    // E. SHINOBI HEAD & MASK
+    // E. SHINOBI HEAD & MASK (দৌড়ের সাথে রিঅ্যাক্টিভ হেড ট্র্যাকিং)
     // ==========================================
     const headX = 4;
-    const headY = -hh + 10 + (isMoving ? 0 : idleBreathing * 0.6);
+    const headY = -hh + 10 + (isMoving ? runBounce * 0.85 : idleBreathing * 0.6);
 
     // 1. Ninja Cowl / Hood Base
     ctx.fillStyle = '#0a0a14';
@@ -901,9 +919,9 @@ export class Player {
     // F. FRONT ARM & CYBER KUNAI / COMBAT STANCE
     // ==========================================
     ctx.save();
-    const armSwing = this.isGrounded ? (isMoving ? -legR * 0.72 : -0.2) : 0.25;
+    const armSwing = this.isGrounded ? (isMoving ? -legR * 0.8 : -0.2) : 0.25;
     const shoulderX = 2;
-    const shoulderY = -hh + 20 + (isMoving ? 0 : idleBreathing);
+    const shoulderY = -hh + 20 + (isMoving ? runBounce * 0.85 : idleBreathing);
     const elbowX = shoulderX + Math.sin(armSwing) * 12;
     const elbowY = shoulderY + Math.cos(armSwing) * 12;
     const handX = elbowX + Math.sin(armSwing - 0.45) * 11;

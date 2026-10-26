@@ -140,37 +140,60 @@ export class ParallaxBackground {
     const h = this.height;
     const gy = this.groundY;
 
-    // 1. Deep Celestial Sky Gradient
+    // 1. Deep Celestial Twilight & Cosmic Atmosphere
     const skyGrad = ctx.createLinearGradient(0, 0, 0, gy);
-    skyGrad.addColorStop(0, levelTheme.skyGradient[0]);
-    skyGrad.addColorStop(0.5, levelTheme.skyGradient[1]);
-    skyGrad.addColorStop(1, levelTheme.skyGradient[2]);
+    skyGrad.addColorStop(0, '#020108'); // Zenith Deep Space Abyss
+    skyGrad.addColorStop(0.28, levelTheme.skyGradient[0]);
+    skyGrad.addColorStop(0.62, levelTheme.skyGradient[1]);
+    skyGrad.addColorStop(0.88, levelTheme.skyGradient[2]);
+    skyGrad.addColorStop(1.0, '#221538'); // Atmospheric Airglow
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, w, h);
 
-    // 2. Realistic Twinkling Deep Space Starfield
+    // 1.5. Deep Space Cosmic Nebula Dust Lanes (গ্যালাকটিক নেবুলা গ্যাস মেঘ)
+    this.drawCosmicNebula(ctx, w, gy);
+
+    // 2. Realistic Twinkling Deep Space Starfield with Stellar Diffraction Spikes
     const now = Date.now() / 1000;
     ctx.save();
     for (const star of this.stars) {
       const twinkle = Math.sin(now * star.twinkleSpeed + star.twinkleOffset);
-      const alpha = Math.max(0.1, Math.min(1.0, star.baseAlpha + twinkle * 0.3));
+      const alpha = Math.max(0.12, Math.min(1.0, star.baseAlpha + twinkle * 0.35));
       ctx.globalAlpha = alpha;
       ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = '#ffffff';
-      ctx.shadowBlur = star.size > 1.8 ? 5 : 0;
-      ctx.beginPath();
-      ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-      ctx.fill();
+
+      if (star.size > 1.8) {
+        // Bright Diamond Star with 4-Point Diffraction Cross Spikes
+        ctx.shadowColor = '#c4b5fd';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.75})`;
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(star.x - 5, star.y);
+        ctx.lineTo(star.x + 5, star.y);
+        ctx.moveTo(star.x, star.y - 5);
+        ctx.lineTo(star.x, star.y + 5);
+        ctx.stroke();
+      } else {
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     ctx.restore();
 
-    // 3. High-Altitude Cirrus Cloud Wisps (Behind Moon)
+    // 3. High-Altitude Cirrus Cloud Wisps (Silky moonlit ice streaks)
     this.drawCirrusClouds(ctx);
 
     // 4. Masterpiece Photorealistic 3D Moon with Detailed Maria, Craters & Rays
     this.drawMasterpieceMoon(ctx, w, h, gy, levelTheme);
 
-    // 5. Volumetric Multi-Lobe Clouds with Silver Moonlight Rim
+    // 5. Volumetric Billowing Cumulus Clouds with Silver Moonlight Rim
     this.drawVolumetricClouds(ctx, levelTheme);
 
     // 6. Layer 1: Distant Jagged Mountains / Cyber Skyline
@@ -192,46 +215,77 @@ export class ParallaxBackground {
     this.drawRealisticLand(ctx, w, h, gy, levelTheme);
   }
 
-  // Draw High-Altitude Wispy Cirrus Clouds
+  // Draw Deep Space Cosmic Nebula Dust Lanes (গ্যালাকটিক নেবুলা গ্যাস মেঘ)
+  drawCosmicNebula(ctx, w, gy) {
+    ctx.save();
+    // Violet Nebula Lane
+    const neb1 = ctx.createRadialGradient(w * 0.35, gy * 0.25, 20, w * 0.35, gy * 0.25, w * 0.45);
+    neb1.addColorStop(0, 'rgba(147, 51, 234, 0.08)');
+    neb1.addColorStop(0.5, 'rgba(126, 34, 206, 0.04)');
+    neb1.addColorStop(1, 'transparent');
+    ctx.fillStyle = neb1;
+    ctx.fillRect(0, 0, w, gy);
+
+    // Cyan/Teal Cosmic Gas Filament
+    const neb2 = ctx.createRadialGradient(w * 0.72, gy * 0.18, 15, w * 0.72, gy * 0.18, w * 0.38);
+    neb2.addColorStop(0, 'rgba(6, 182, 212, 0.06)');
+    neb2.addColorStop(0.6, 'rgba(14, 116, 144, 0.03)');
+    neb2.addColorStop(1, 'transparent');
+    ctx.fillStyle = neb2;
+    ctx.fillRect(0, 0, w, gy);
+    ctx.restore();
+  }
+
+  // Draw High-Altitude Wispy Cirrus Clouds (Luminous Ice Crystal Sheets)
   drawCirrusClouds(ctx) {
     ctx.save();
     for (const c of this.cirrusClouds) {
+      // Silky feathered ice crystal cloud
       const grad = ctx.createLinearGradient(c.x, c.y, c.x + c.width, c.y);
       grad.addColorStop(0, 'transparent');
-      grad.addColorStop(0.3, `rgba(168, 175, 215, ${c.alpha})`);
-      grad.addColorStop(0.7, `rgba(195, 205, 240, ${c.alpha * 1.2})`);
+      grad.addColorStop(0.25, `rgba(186, 195, 235, ${c.alpha * 0.9})`);
+      grad.addColorStop(0.5, `rgba(215, 225, 255, ${c.alpha * 1.35})`);
+      grad.addColorStop(0.75, `rgba(175, 185, 230, ${c.alpha * 0.9})`);
       grad.addColorStop(1, 'transparent');
 
       ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.ellipse(c.x + c.width * 0.5, c.y + c.height * 0.5, c.width * 0.5, c.height * 0.5, -0.05, 0, Math.PI * 2);
+      ctx.ellipse(c.x + c.width * 0.5, c.y + c.height * 0.5, c.width * 0.5, c.height * 0.5, -0.06, 0, Math.PI * 2);
       ctx.fill();
+
+      // Delicate interior ice wisps
+      ctx.strokeStyle = `rgba(240, 245, 255, ${c.alpha * 0.45})`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(c.x + c.width * 0.2, c.y + c.height * 0.4);
+      ctx.quadraticCurveTo(c.x + c.width * 0.5, c.y + c.height * 0.2, c.x + c.width * 0.8, c.y + c.height * 0.6);
+      ctx.stroke();
     }
     ctx.restore();
   }
 
-  // Draw Volumetric Billowing Clouds with Detailed Underbelly & Silver Lining
+  // Draw Volumetric Billowing Cumulus Clouds with Silver Moonlight Rim
   drawVolumetricClouds(ctx, levelTheme) {
     ctx.save();
     for (const cloud of this.volumetricClouds) {
       const cx = cloud.x + cloud.width * 0.5;
       const cy = cloud.y + cloud.height * 0.5;
 
-      // Dark shaded underbelly base
-      ctx.fillStyle = 'rgba(12, 10, 24, 0.68)';
+      // 1. Dark shaded underbelly base (Atmospheric ambient occlusion)
+      ctx.fillStyle = 'rgba(8, 6, 18, 0.72)';
       ctx.beginPath();
       for (const puff of cloud.puffs) {
         const px = cx + puff.rx * cloud.width;
-        const py = cy + puff.ry * cloud.height + 5;
-        const pr = puff.r * cloud.height * 1.15;
+        const py = cy + puff.ry * cloud.height + 6;
+        const pr = puff.r * cloud.height * 1.18;
         ctx.arc(px, py, pr, 0, Math.PI * 2);
       }
       ctx.fill();
 
-      // Soft volumetric mid-body with atmospheric tone
-      const bodyGrad = ctx.createRadialGradient(cx, cy - 8, cloud.height * 0.25, cx, cy, cloud.width * 0.55);
-      bodyGrad.addColorStop(0, `rgba(55, 48, 85, ${cloud.alpha * 1.15})`);
-      bodyGrad.addColorStop(0.65, `rgba(24, 18, 44, ${cloud.alpha})`);
+      // 2. Soft volumetric mid-body with lunar backscattering
+      const bodyGrad = ctx.createRadialGradient(cx, cy - 10, cloud.height * 0.2, cx, cy + 2, cloud.width * 0.52);
+      bodyGrad.addColorStop(0, `rgba(75, 68, 110, ${cloud.alpha * 1.25})`);
+      bodyGrad.addColorStop(0.55, `rgba(32, 25, 56, ${cloud.alpha * 1.05})`);
       bodyGrad.addColorStop(1, 'transparent');
 
       ctx.fillStyle = bodyGrad;
@@ -244,17 +298,17 @@ export class ParallaxBackground {
       }
       ctx.fill();
 
-      // Silver Moonlight Rim Highlight on Cloud Top Crests
-      ctx.strokeStyle = `rgba(245, 250, 255, ${cloud.alpha * 0.82})`;
-      ctx.lineWidth = 2.4;
+      // 3. Bright Silver Moonlight Rim Highlight on Upper Crests
+      ctx.strokeStyle = `rgba(255, 255, 255, ${cloud.alpha * 0.88})`;
+      ctx.lineWidth = 2.6;
       ctx.shadowColor = levelTheme.moonColor;
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 12;
       for (const puff of cloud.puffs) {
         const px = cx + puff.rx * cloud.width;
         const py = cy + puff.ry * cloud.height;
         const pr = puff.r * cloud.height;
         ctx.beginPath();
-        ctx.arc(px, py, pr, Math.PI * 1.12, Math.PI * 1.88);
+        ctx.arc(px, py, pr, Math.PI * 1.1, Math.PI * 1.9);
         ctx.stroke();
       }
     }
