@@ -151,17 +151,18 @@ export function GameHUD({
       </div>
 
       {/* Bottom Controls / Mobile Touch Action Buttons */}
-      <div className="flex items-end justify-between w-full pointer-events-auto pb-1 sm:pb-2">
+      <div className="flex items-end justify-between w-full pointer-events-auto pb-2 sm:pb-4">
         {/* Left: Slide / Duck Button (Mobile) */}
         <button
           onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); onSlide?.(); }}
           onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); onStopSlide?.(); }}
           onMouseDown={(e) => { e.stopPropagation(); onSlide?.(); }}
           onMouseUp={(e) => { e.stopPropagation(); onStopSlide?.(); }}
-          className="glass-panel w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1 active:scale-90 active:bg-cyan-500/20 transition-all border border-cyan-500/30 hover:border-cyan-400 shadow-lg text-cyan-300"
+          className="glass-panel w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1 active:scale-90 active:bg-cyan-500/30 transition-all border-2 border-cyan-500/50 hover:border-cyan-400 shadow-cyan text-cyan-300"
+          title="Slide"
         >
-          <ArrowDown className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
-          <span className="text-[9px] sm:text-xs font-bold uppercase tracking-wider">Slide</span>
+          <ArrowDown className="w-6 h-6 sm:w-7 sm:h-7" />
+          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Slide</span>
         </button>
 
         {/* Controls Hint for Desktop */}
@@ -176,10 +177,11 @@ export function GameHUD({
         <button
           onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); onJump?.(); }}
           onClick={(e) => { e.stopPropagation(); onJump?.(); }}
-          className="glass-panel w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1 active:scale-90 active:bg-purple-500/30 transition-all border-2 border-purple-500/50 hover:border-purple-400 shadow-purple text-purple-300"
+          className="glass-panel w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex flex-col items-center justify-center gap-1 active:scale-90 active:bg-purple-500/40 transition-all border-2 border-purple-500/60 hover:border-purple-400 shadow-purple text-purple-300"
+          title="Jump / Double Jump"
         >
-          <ArrowUp className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9" />
-          <span className="text-[10px] sm:text-xs md:text-sm font-game font-bold uppercase tracking-wider">Jump</span>
+          <ArrowUp className="w-8 h-8 sm:w-9 sm:h-9" />
+          <span className="text-xs sm:text-sm font-game font-bold uppercase tracking-wider">Jump</span>
         </button>
       </div>
     </div>

@@ -19,7 +19,7 @@ export function MainMenu({
   const hasDailyReward = daily.completed && !daily.claimed;
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col justify-between p-3 sm:p-6 md:p-10 select-none pointer-events-auto overflow-y-auto">
+    <div className="absolute inset-0 z-20 flex flex-col justify-between p-3 sm:p-6 md:p-10 select-none pointer-events-auto overflow-y-auto pb-[max(12px,env(safe-area-inset-bottom))]">
       {/* Top Header */}
       <div className="flex items-center justify-between w-full gap-2">
         {/* Brand Logo & Tag */}
@@ -64,7 +64,7 @@ export function MainMenu({
           <span className="px-3 py-0.5 sm:px-4 sm:py-1 rounded-full text-[9px] sm:text-[11px] font-game font-bold uppercase tracking-widest bg-purple-500/20 text-purple-300 border border-purple-500/40 animate-pulse">
             CYBER SHADOW ENDLESS RUNNER
           </span>
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-game font-black tracking-wider text-white text-glow-purple drop-shadow-2xl">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-game font-black tracking-wider text-white text-glow-purple drop-shadow-2xl">
             SHADOW<span className="text-cyan-400 text-glow-cyan">RUNNER</span>
           </h1>
           <p className="text-xs sm:text-sm md:text-base text-gray-300 max-w-md font-normal leading-relaxed px-2">
