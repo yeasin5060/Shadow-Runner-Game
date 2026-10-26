@@ -242,11 +242,35 @@ export class Obstacle {
         ctx.beginPath();
         ctx.moveTo(ox + ow / 2, oy + 10);
         ctx.lineTo(ox + ow / 2, oy + oh - 10);
-        ctx.stroke();
+        // Electric crackling spark arcs
+        if (Math.random() < 0.4) {
+          const arcY = oy + 10 + Math.random() * (oh - 20);
+          ctx.strokeStyle = '#00f5ff';
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.moveTo(ox + ow / 2, arcY);
+          ctx.lineTo(ox + ow / 2 + (Math.random() - 0.5) * 16, arcY + (Math.random() - 0.5) * 10);
+          ctx.stroke();
+        }
         break;
       }
 
       case 'drone': {
+        // Conical Searching Spotlight Beam onto ground
+        ctx.save();
+        const beamSweep = Math.sin(this.animTimer * 3.5) * 24;
+        const spotlight = ctx.createLinearGradient(ox + ow / 2, oy + oh / 2, ox + ow / 2 + beamSweep, this.groundY);
+        spotlight.addColorStop(0, 'rgba(239, 68, 68, 0.22)');
+        spotlight.addColorStop(1, 'transparent');
+        ctx.fillStyle = spotlight;
+        ctx.beginPath();
+        ctx.moveTo(ox + ow / 2, oy + oh / 2);
+        ctx.lineTo(ox + ow / 2 - 38 + beamSweep, this.groundY);
+        ctx.lineTo(ox + ow / 2 + 38 + beamSweep, this.groundY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
         // Shadow Recon Drone
         ctx.fillStyle = '#111222';
         ctx.strokeStyle = '#a855f7';
@@ -263,12 +287,12 @@ export class Obstacle {
         // Spinning red sensor eye
         ctx.fillStyle = '#ef4444';
         ctx.shadowColor = '#ef4444';
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 12;
         ctx.beginPath();
         ctx.arc(ox + ow / 2 + Math.sin(this.animTimer * 6) * 6, oy + oh / 2, 4.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Wings / Blades
+        // Wings / Blades with spinning blur
         ctx.strokeStyle = '#00f5ff';
         ctx.lineWidth = 2;
         const wingPulse = Math.sin(this.animTimer * 25) * 8;

@@ -131,6 +131,8 @@ export function useGameEngine() {
       animationFrameId: null,
       isRunning: false,
       powerupsUsedCount: 0,
+      shake: { intensity: 0 },
+      jumpBuffer: 0,
     };
   }, [selectedSkin, showToast]);
 
@@ -139,6 +141,9 @@ export function useGameEngine() {
     const engine = engineRef.current;
     engine.isRunning = false;
     sound.stopBgm();
+
+    // Dramatic screen shake on fatal crash
+    if (engine.shake) engine.shake.intensity = 16;
 
     const finalScore = engine.score.score;
     const previousBest = storage.getBestScore();
@@ -212,9 +217,18 @@ export function useGameEngine() {
     const baseSpeed = currentLevel.baseSpeed;
     const gameSpeed = isSpeedBoost ? baseSpeed * 1.55 : baseSpeed;
 
-    // 1. Update Game Systems
+    // Check buffered jump (Zero-latency responsiveness)
+    if (engine.jumpBuffer > 0) {
+      engine.jumpBuffer -= dt;
+      if (player.isGrounded) {
+        player.jump(particles);
+        engine.jumpBuffer = 0;
+      }
+    }
+
+    // 1. Update Game Systems with speed scaling
     background.update(gameSpeed, dt);
-    player.update(dt, groundY, particles, powerups.active);
+    player.update(dt, groundY, particles, powerups.active, gameSpeed);
     powerups.update(dt, gameSpeed, player, particles);
     obstacles.update(dt, timestamp, gameSpeed, currentLevel, groundY, player, powerups.active.magnet);
     particles.update(dt);
@@ -224,6 +238,7 @@ export function useGameEngine() {
     if (isSpeedBoost && !engine.hadSpeedBoost) {
       engine.powerupsUsedCount++;
       engine.hadSpeedBoost = true;
+      if (engine.shake) engine.shake.intensity = 5;
     } else if (!isSpeedBoost) {
       engine.hadSpeedBoost = false;
     }
@@ -239,18 +254,29 @@ export function useGameEngine() {
         score.addCoin();
       },
       onShieldSaved: () => {
+        if (engine.shake) engine.shake.intensity = 10;
         const ach = storage.unlockAchievement('shield_savior');
         if (ach) showToast('Achievement Unlocked!', ach.title);
       },
     });
 
-    // 3. Render Scene
+    // 3. Render Scene with Dynamic Screen Shake
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    if (engine.shake && engine.shake.intensity > 0) {
+      const shakeX = (Math.random() - 0.5) * engine.shake.intensity * 2;
+      const shakeY = (Math.random() - 0.5) * engine.shake.intensity * 2;
+      ctx.translate(shakeX, shakeY);
+      engine.shake.intensity *= 0.88;
+      if (engine.shake.intensity < 0.2) engine.shake.intensity = 0;
+    }
+
     background.draw(ctx, currentLevel.bgTheme);
     obstacles.draw(ctx, currentLevel.bgTheme.groundAccent);
     powerups.draw(ctx);
     player.draw(ctx, powerups.active);
     particles.draw(ctx);
+    ctx.restore();
 
     // 4. Push React state updates throttle (every 3 frames)
     if (Math.floor(timestamp / 50) % 2 === 0) {
@@ -329,12 +355,16 @@ export function useGameEngine() {
     }
   }, []);
 
-  // Jump Action
+  // Jump Action with Instant Zero-Latency Input Buffering
   const triggerJump = useCallback(() => {
     if (gameState !== 'PLAYING') return;
     const engine = engineRef.current;
     if (engine.player) {
-      engine.player.jump(engine.particles);
+      const jumped = engine.player.jump(engine.particles);
+      if (!jumped && !engine.player.isGrounded) {
+        // Buffer input for 180ms so landing triggers jump instantly on frame 0
+        engine.jumpBuffer = 0.18;
+      }
     }
   }, [gameState]);
 
