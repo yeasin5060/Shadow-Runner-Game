@@ -1,7 +1,7 @@
 // In-Game Heads-Up Display (HUD) for Shadow Runner
 
 import React from 'react';
-import { Pause, Coins, Flame, Shield, Zap, Magnet, Volume2, VolumeX, ArrowUp, ArrowDown } from 'lucide-react';
+import { Pause, Coins, Flame, Shield, Zap, Magnet, Volume2, VolumeX, ArrowUp, ArrowDown, RotateCw } from 'lucide-react';
 import { sound } from '../game/audio';
 import { storage } from '../utils/storage';
 
@@ -13,6 +13,8 @@ export function GameHUD({
   onSlide,
   onStopSlide,
   showToast,
+  isPortrait,
+  onRotate,
 }) {
   const [isMuted, setIsMuted] = React.useState(!storage.getSettings().soundEnabled);
 
@@ -71,7 +73,7 @@ export function GameHUD({
           )}
         </div>
 
-        {/* Right: Coins, Audio & Pause */}
+        {/* Right: Coins, Screen Rotate, Audio & Pause */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 pointer-events-auto shrink-0">
           {/* Coin Counter */}
           <div className="glass-panel px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl flex items-center gap-1.5 border border-yellow-500/30">
@@ -82,6 +84,19 @@ export function GameHUD({
               {scoreData.coins}
             </span>
           </div>
+
+          {/* Rotate to Landscape Button (Mobile) */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRotate?.();
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="glass-panel p-2 sm:p-2.5 rounded-xl hover:bg-white/10 active:scale-95 transition-all text-cyan-300 hover:text-white border border-cyan-500/30"
+            title="Rotate to Landscape Mode"
+          >
+            <RotateCw className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+          </button>
 
           {/* Audio Mute button */}
           <button
@@ -111,8 +126,19 @@ export function GameHUD({
         </div>
       </div>
 
-      {/* Middle: Active Power-up Timers Banner */}
-      <div className="flex flex-col items-center gap-1.5 self-center my-auto px-2">
+      {/* Middle: Active Power-up Timers Banner & Portrait Hint */}
+      <div className="flex flex-col items-center gap-1.5 self-center my-auto px-2 pointer-events-auto">
+        {/* Portrait Mode Hint */}
+        {isPortrait && (
+          <button
+            onClick={onRotate}
+            className="glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 text-cyan-300 text-[10px] sm:text-xs font-semibold border border-cyan-400/40 shadow-cyan mb-1 animate-pulse"
+          >
+            <RotateCw className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
+            <span>Landscape mode recommendation (Tap to Rotate)</span>
+          </button>
+        )}
+
         {/* Shield Active */}
         {powerupStatus.shield && (
           <div className="glass-panel-glow px-3 py-1 sm:px-4 sm:py-1.5 rounded-full flex items-center gap-1.5 text-cyan-300 text-[10px] sm:text-xs font-semibold animate-pulse border border-cyan-400/60 shadow-cyan">
@@ -154,11 +180,21 @@ export function GameHUD({
       <div className="flex items-end justify-between w-full pointer-events-auto pb-1 sm:pb-3">
         {/* Left: Slide / Duck Button (Mobile) */}
         <button
-          onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); onSlide?.(); }}
-          onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); onStopSlide?.(); }}
-          onMouseDown={(e) => { e.stopPropagation(); onSlide?.(); }}
-          onMouseUp={(e) => { e.stopPropagation(); onStopSlide?.(); }}
-          className="glass-panel w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1 active:scale-90 active:bg-cyan-500/30 transition-all border-2 border-cyan-500/50 hover:border-cyan-400 shadow-cyan text-cyan-300 shrink-0"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onSlide?.();
+          }}
+          onPointerUp={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onStopSlide?.();
+          }}
+          onPointerLeave={(e) => {
+            e.stopPropagation();
+            onStopSlide?.();
+          }}
+          className="glass-panel w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1 active:scale-90 active:bg-cyan-500/30 transition-all border-2 border-cyan-500/50 hover:border-cyan-400 shadow-cyan text-cyan-300 shrink-0 touch-none"
           title="Slide (↓ / S)"
         >
           <ArrowDown className="w-5 h-5 sm:w-7 sm:h-7" />
@@ -167,21 +203,25 @@ export function GameHUD({
 
         {/* Controls Hint for Desktop */}
         <div className="hidden md:flex items-center gap-4 text-xs text-gray-400 glass-panel px-4 py-2 rounded-xl pointer-events-none">
-          <span><kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-200 font-mono">CLICK / SPACE</kbd> Jump</span>
-          <span><kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-200 font-mono">2x</kbd> Somersault 360°</span>
+          <span><kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-200 font-mono">1x TAP</kbd> Jump</span>
+          <span><kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-200 font-mono">2x TAP</kbd> 360° Somersault</span>
           <span><kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-200 font-mono">↓ / S</kbd> Slide</span>
           <span><kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-200 font-mono">P</kbd> Pause</span>
         </div>
 
-        {/* Right: Jump / Double Jump Button (Mobile) */}
+        {/* Right: Jump / Double Jump 360° Rotate Button (Mobile) */}
         <button
-          onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); onJump?.(); }}
-          onClick={(e) => { e.stopPropagation(); onJump?.(); }}
-          className="glass-panel w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1 active:scale-90 active:bg-purple-500/40 transition-all border-2 border-purple-500/60 hover:border-purple-400 shadow-purple text-purple-300 shrink-0"
-          title="Jump / Double Jump 360°"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onJump?.();
+          }}
+          className="glass-panel w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1 active:scale-90 active:bg-purple-500/40 transition-all border-2 border-purple-500/60 hover:border-purple-400 shadow-purple text-purple-300 shrink-0 touch-none"
+          title="1st Tap = Jump | 2nd Tap = 360° Rotate"
         >
           <ArrowUp className="w-6 h-6 sm:w-8 sm:h-8" />
           <span className="text-[11px] sm:text-sm font-game font-bold uppercase tracking-wider">Jump</span>
+          <span className="text-[8px] font-sans text-purple-300/80 -mt-0.5 hidden xs:inline">2x Flip</span>
         </button>
       </div>
     </div>

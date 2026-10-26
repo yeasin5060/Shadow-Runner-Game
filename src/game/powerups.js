@@ -212,4 +212,10 @@ export class PowerupManager {
       token.draw(ctx);
     }
   }
+
+  adjustGround(newGroundY, dy) {
+    for (const token of this.tokens) {
+      token.y += dy;
+    }
+  }
 }

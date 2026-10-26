@@ -33,6 +33,8 @@ export default function App() {
     selectedSkin,
     toastNotification,
     isNewHighScore,
+    isPortrait,
+    requestLandscapeMode,
     startGame,
     togglePause,
     restartGame,
@@ -50,7 +52,7 @@ export default function App() {
   const closeModal = () => setModalState(null);
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-[#06060c] select-none font-sans text-gray-100">
+    <main className="relative w-full h-full min-h-[100dvh] overflow-hidden bg-[#06060c] select-none font-sans text-gray-100">
       {/* 1. Underlying Canvas */}
       <GameCanvas
         canvasRef={canvasRef}
@@ -91,6 +93,8 @@ export default function App() {
           onOpenAchievements={() => setModalState('ACHIEVEMENTS')}
           onOpenLeaderboard={() => setModalState('LEADERBOARD')}
           onOpenSettings={() => setModalState('SETTINGS')}
+          isPortrait={isPortrait}
+          onRotate={requestLandscapeMode}
         />
       )}
 
@@ -104,6 +108,8 @@ export default function App() {
           onSlide={triggerSlide}
           onStopSlide={triggerStopSlide}
           showToast={showToast}
+          isPortrait={isPortrait}
+          onRotate={requestLandscapeMode}
         />
       )}
 

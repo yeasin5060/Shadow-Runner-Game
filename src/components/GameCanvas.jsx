@@ -10,15 +10,18 @@ export function GameCanvas({
   gameState,
 }) {
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
+  const isTouchDeviceRef = useRef(false);
 
-  // Screen click handler for desktop mouse
+  // Screen click handler for desktop mouse (ignores synthetic touch-generated mousedowns)
   const handleMouseDown = (e) => {
+    if (isTouchDeviceRef.current) return;
     if (e.button === 0 && gameState === 'PLAYING') {
       onJump?.();
     }
   };
 
   const handleTouchStart = (e) => {
+    isTouchDeviceRef.current = true;
     if (gameState !== 'PLAYING') return;
     const touch = e.touches[0];
     touchStartRef.current = {
@@ -35,7 +38,7 @@ export function GameCanvas({
     const dy = touch.clientY - touchStartRef.current.y;
 
     // Swipe Down -> Slide
-    if (dy > 40 && Math.abs(dy) > Math.abs(dx)) {
+    if (dy > 35 && Math.abs(dy) > Math.abs(dx)) {
       onSlide?.();
       setTimeout(() => {
         onStopSlide?.();
@@ -43,13 +46,13 @@ export function GameCanvas({
       return;
     }
 
-    // Tap or Swipe Up -> Jump
+    // 1st Tap: Athletic Leap Jump | 2nd Tap (airborne): 360° Acrobatic Somersault Flip
     onJump?.();
   };
 
   return (
     <div
-      className="absolute inset-0 w-full h-full overflow-hidden select-none cursor-pointer"
+      className="absolute inset-0 w-full h-full overflow-hidden select-none cursor-pointer touch-none"
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}

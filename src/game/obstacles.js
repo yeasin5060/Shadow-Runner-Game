@@ -405,4 +405,19 @@ export class ObstacleManager {
       obs.draw(ctx, groundAccent);
     }
   }
+
+  adjustGround(newGroundY, dy) {
+    for (const obs of this.obstacles) {
+      obs.groundY = newGroundY;
+      if (obs.type === 'drone') {
+        obs.baseY = newGroundY - 110;
+        obs.y = obs.baseY;
+      } else {
+        obs.y = newGroundY - obs.height;
+      }
+    }
+    for (const coin of this.coins) {
+      coin.y += dy;
+    }
+  }
 }

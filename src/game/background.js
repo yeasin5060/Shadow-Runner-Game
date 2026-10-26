@@ -26,39 +26,8 @@ export class ParallaxBackground {
       });
     }
 
-    // 2. High-Altitude Cirrus Clouds (Luminous Moonlit Wisps)
-    this.cirrusClouds = [];
-    for (let i = 0; i < 5; i++) {
-      this.cirrusClouds.push({
-        x: Math.random() * canvasWidth,
-        y: 20 + Math.random() * 95,
-        width: 190 + Math.random() * 260,
-        height: 25 + Math.random() * 35,
-        speed: 0.08 + Math.random() * 0.12,
-        alpha: 0.14 + Math.random() * 0.16,
-      });
-    }
-
-    // 3. Realistic Volumetric Clouds with Multi-Lobe Puffs & Silver Lining
-    this.volumetricClouds = [];
-    for (let i = 0; i < 6; i++) {
-      this.volumetricClouds.push({
-        x: (canvasWidth / 6) * i + Math.random() * 80,
-        y: 35 + Math.random() * 140,
-        width: 170 + Math.random() * 150,
-        height: 52 + Math.random() * 38,
-        speed: 0.2 + Math.random() * 0.3,
-        alpha: 0.3 + Math.random() * 0.25,
-        puffs: [
-          { rx: -0.38, ry: 0.12, r: 0.32 },
-          { rx: -0.18, ry: -0.18, r: 0.44 },
-          { rx: 0.08, ry: -0.25, r: 0.52 },
-          { rx: 0.32, ry: -0.06, r: 0.38 },
-          { rx: 0.46, ry: 0.14, r: 0.28 },
-          { rx: -0.02, ry: 0.18, r: 0.34 },
-        ]
-      });
-    }
+    // 2. High-Altitude Cirrus & Volumetric Clouds with Responsive Positioning
+    this.initClouds(canvasWidth, canvasHeight, groundY);
 
     // 4. Delicate Bioluminescent Fireflies (আসল জোনাকি পোকা - কোনো বাবল বা বৃত্ত নয়)
     this.fireflies = [];
@@ -92,10 +61,98 @@ export class ParallaxBackground {
     }
   }
 
+  initClouds(w, h, groundY) {
+    const isMobile = w < 768 || h < 520;
+    const skyLimit = Math.min(isMobile ? 55 : 120, groundY * (isMobile ? 0.22 : 0.35));
+
+    // Cirrus clouds (spaced out, upper atmosphere)
+    const cirrusCount = isMobile ? 2 : 4;
+    this.cirrusClouds = [];
+    const cirrusSpacing = w / cirrusCount;
+    for (let i = 0; i < cirrusCount; i++) {
+      this.cirrusClouds.push({
+        x: cirrusSpacing * i + Math.random() * (cirrusSpacing * 0.4),
+        y: 8 + Math.random() * (skyLimit * 0.6),
+        width: isMobile ? 110 + Math.random() * 70 : 190 + Math.random() * 220,
+        height: isMobile ? 16 + Math.random() * 12 : 25 + Math.random() * 32,
+        speed: 0.08 + Math.random() * 0.1,
+        alpha: isMobile ? 0.12 + Math.random() * 0.1 : 0.14 + Math.random() * 0.16,
+      });
+    }
+
+    // Volumetric Billowing Clouds - Spaced apart with generous gaps, never clumped
+    const volCount = isMobile ? 3 : 5;
+    this.volumetricClouds = [];
+    const volSpacing = w / volCount;
+    for (let i = 0; i < volCount; i++) {
+      this.volumetricClouds.push({
+        x: volSpacing * i + (Math.random() * 30 - 15),
+        y: 12 + Math.random() * skyLimit,
+        width: isMobile ? 120 + Math.random() * 60 : 180 + Math.random() * 130,
+        height: isMobile ? 30 + Math.random() * 14 : 50 + Math.random() * 34,
+        speed: 0.16 + Math.random() * 0.2,
+        alpha: isMobile ? 0.22 + Math.random() * 0.16 : 0.28 + Math.random() * 0.22,
+        puffs: [
+          { rx: -0.38, ry: 0.12, r: 0.32 },
+          { rx: -0.18, ry: -0.18, r: 0.44 },
+          { rx: 0.08, ry: -0.25, r: 0.52 },
+          { rx: 0.32, ry: -0.06, r: 0.38 },
+          { rx: 0.46, ry: 0.14, r: 0.28 },
+          { rx: -0.02, ry: 0.18, r: 0.34 },
+        ]
+      });
+    }
+  }
+
   resize(w, h, groundY) {
     this.width = w;
     this.height = h;
     this.groundY = groundY;
+
+    // Rescale stars into new viewport bounds
+    for (const star of this.stars) {
+      if (star.x > w) star.x = Math.random() * w;
+      if (star.y > groundY * 0.72) star.y = Math.random() * (groundY * 0.72);
+    }
+
+    // Rebalance and clamp clouds cleanly
+    const isMobile = w < 768 || h < 520;
+    const skyLimit = Math.min(isMobile ? 55 : 120, groundY * (isMobile ? 0.22 : 0.35));
+
+    const volCount = isMobile ? 3 : 5;
+    if (this.volumetricClouds.length > volCount) {
+      this.volumetricClouds = this.volumetricClouds.slice(0, volCount);
+    } else if (this.volumetricClouds.length < volCount) {
+      this.initClouds(w, h, groundY);
+      return;
+    }
+
+    const volSpacing = w / Math.max(1, this.volumetricClouds.length);
+    this.volumetricClouds.forEach((cloud, i) => {
+      cloud.y = Math.min(cloud.y, skyLimit);
+      cloud.width = isMobile ? Math.min(cloud.width, 180) : cloud.width;
+      cloud.height = isMobile ? Math.min(cloud.height, 42) : cloud.height;
+      if (cloud.x > w + 160) {
+        cloud.x = volSpacing * i;
+      }
+    });
+
+    const cirrusCount = isMobile ? 2 : 4;
+    if (this.cirrusClouds.length > cirrusCount) {
+      this.cirrusClouds = this.cirrusClouds.slice(0, cirrusCount);
+    }
+    this.cirrusClouds.forEach((cloud) => {
+      cloud.y = Math.min(cloud.y, skyLimit * 0.65);
+      if (isMobile && cloud.width > 180) cloud.width = 140;
+      if (isMobile && cloud.height > 24) cloud.height = 18;
+      if (cloud.x > w + 140) cloud.x = Math.random() * w;
+    });
+
+    // Fireflies within bounds
+    for (const f of this.fireflies) {
+      if (f.x > w) f.x = Math.random() * w;
+      if (f.y > groundY - 40) f.y = 50 + Math.random() * Math.max(30, groundY - 80);
+    }
   }
 
   update(gameSpeed, dt) {
@@ -105,20 +162,23 @@ export class ParallaxBackground {
     this.offsetGround = (this.offsetGround + gameSpeed) % 600; // pebble loop
     this.fogOffset = (this.fogOffset + gameSpeed * 0.7) % this.width;
 
-    // Drifting clouds
+    const isMobile = this.width < 768 || this.height < 520;
+    const skyLimit = Math.min(isMobile ? 55 : 120, this.groundY * (isMobile ? 0.22 : 0.35));
+
+    // Drifting clouds with generous wrap-around spacing
     for (const cloud of this.cirrusClouds) {
       cloud.x -= cloud.speed + gameSpeed * 0.05;
-      if (cloud.x + cloud.width < -140) {
-        cloud.x = this.width + 160;
-        cloud.y = 15 + Math.random() * 105;
+      if (cloud.x + cloud.width < -120) {
+        cloud.x = this.width + 100 + Math.random() * 100;
+        cloud.y = 8 + Math.random() * (skyLimit * 0.6);
       }
     }
 
     for (const cloud of this.volumetricClouds) {
       cloud.x -= cloud.speed + gameSpeed * 0.12;
-      if (cloud.x + cloud.width < -160) {
-        cloud.x = this.width + 170;
-        cloud.y = 30 + Math.random() * 145;
+      if (cloud.x + cloud.width < -140) {
+        cloud.x = this.width + 120 + Math.random() * 120;
+        cloud.y = 12 + Math.random() * skyLimit;
       }
     }
 

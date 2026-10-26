@@ -41,6 +41,10 @@ export function useGameEngine() {
 
   const [toastNotification, setToastNotification] = useState(null);
   const [isNewHighScore, setIsNewHighScore] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(
+    typeof window !== 'undefined' ? window.innerHeight > window.innerWidth : false
+  );
+  const lastJumpTimeRef = useRef(0);
 
   // Engine Internals Refs
   const engineRef = useRef({
@@ -360,15 +364,23 @@ export function useGameEngine() {
     }
   }, []);
 
-  // Jump Action with Instant Zero-Latency Input Buffering
+  // Jump Action with Instant Zero-Latency Input Buffering & Duplicate Event Guard
+  // One tap = Jump; Second tap while airborne = 360° Acrobatic Somersault Flip
   const triggerJump = useCallback(() => {
     if (gameState !== 'PLAYING') return;
+    const now = performance.now();
+    // Guard against duplicate synthetic browser touch/click events (< 110ms)
+    if (now - lastJumpTimeRef.current < 110) {
+      return;
+    }
+    lastJumpTimeRef.current = now;
+
     const engine = engineRef.current;
     if (engine.player) {
       const jumped = engine.player.jump(engine.particles);
-      if (!jumped && !engine.player.isGrounded) {
-        // Buffer input for 180ms so landing triggers jump instantly on frame 0
-        engine.jumpBuffer = 0.18;
+      if (!jumped && !engine.player.isGrounded && engine.player.canDoubleJump) {
+        // Buffer input for 160ms so landing triggers jump on frame 0
+        engine.jumpBuffer = 0.16;
       }
     }
   }, [gameState]);
@@ -391,7 +403,26 @@ export function useGameEngine() {
     }
   }, [gameState]);
 
-  // Keyboard Event Listeners
+  // Request Landscape Mode / Mobile Screen Rotation
+  const requestLandscapeMode = useCallback(async () => {
+    try {
+      if (!document.fullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          await document.documentElement.webkitRequestFullscreen();
+        }
+      }
+      if (window.screen?.orientation?.lock) {
+        await window.screen.orientation.lock('landscape');
+      }
+      showToast('Screen Mode', 'Rotated to Landscape Mode!', 'Zap');
+    } catch {
+      showToast('Screen Rotate', 'Please turn on Auto-Rotate on your phone and rotate sideways!', 'Zap');
+    }
+  }, [showToast]);
+
+  // Keyboard Event Listeners (Space / ArrowUp / W = Jump, ArrowDown / S = Slide)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.repeat && (e.code === 'Space' || e.code === 'ArrowUp')) return;
@@ -425,25 +456,11 @@ export function useGameEngine() {
       }
     };
 
-    // Screen click / tap anywhere to jump during gameplay
-    const handlePointerDown = (e) => {
-      if (gameState !== 'PLAYING') return;
-      // Ignore clicks on interactive buttons (e.g., Pause, Mute, Slide)
-      if (e.target && e.target.closest && e.target.closest('button, a, input')) {
-        return;
-      }
-      if (e.button === 0 || e.pointerType === 'touch') {
-        triggerJump();
-      }
-    };
-
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('pointerdown', handlePointerDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('pointerdown', handlePointerDown);
     };
   }, [gameState, triggerJump, triggerSlide, triggerStopSlide, togglePause, startGame, showToast]);
 
@@ -459,25 +476,44 @@ export function useGameEngine() {
       canvas.width = w;
       canvas.height = h;
 
+      const isPort = h > w;
+      setIsPortrait(isPort);
+
       // Detect mobile orientation: Landscape (wide) vs Portrait (tall)
-      const isLandscape = w > h;
+      const isLandscape = !isPort;
       const groundMargin = isLandscape
         ? Math.min(85, Math.max(55, Math.floor(h * 0.18)))
         : Math.min(145, Math.max(90, Math.floor(h * 0.24)));
 
-      const groundY = Math.max(130, h - groundMargin);
+      const newGroundY = Math.max(130, h - groundMargin);
+      const oldGroundY = engineRef.current.groundY || newGroundY;
+      const dy = newGroundY - oldGroundY;
+      engineRef.current.groundY = newGroundY;
 
       if (engineRef.current.player) {
         engineRef.current.player.canvasWidth = w;
         engineRef.current.player.canvasHeight = h;
-        engineRef.current.player.groundY = groundY;
+        engineRef.current.player.groundY = newGroundY;
         engineRef.current.player.x = Math.max(50, Math.min(140, Math.floor(w * (isLandscape ? 0.14 : 0.18))));
         if (engineRef.current.player.isGrounded) {
-          engineRef.current.player.y = groundY - engineRef.current.player.height;
+          engineRef.current.player.y = newGroundY - engineRef.current.player.height;
+        } else if (oldGroundY > 0 && Math.abs(dy) > 1) {
+          engineRef.current.player.y += dy;
         }
       }
+
+      // Synchronously reposition obstacles and powerups when screen rotates
+      if (oldGroundY > 0 && Math.abs(dy) > 1) {
+        if (engineRef.current.obstacles?.adjustGround) {
+          engineRef.current.obstacles.adjustGround(newGroundY, dy);
+        }
+        if (engineRef.current.powerups?.adjustGround) {
+          engineRef.current.powerups.adjustGround(newGroundY, dy);
+        }
+      }
+
       if (engineRef.current.background) {
-        engineRef.current.background.resize(w, h, groundY);
+        engineRef.current.background.resize(w, h, newGroundY);
       }
     };
 
@@ -534,6 +570,8 @@ export function useGameEngine() {
     selectedSkin,
     toastNotification,
     isNewHighScore,
+    isPortrait,
+    requestLandscapeMode,
     startGame,
     togglePause,
     restartGame,

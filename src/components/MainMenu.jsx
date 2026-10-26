@@ -1,7 +1,5 @@
-// Main Menu Component for Shadow Runner
-
 import React from 'react';
-import { Play, Shirt, Calendar, Trophy, Award, Settings as SettingsIcon, Coins, Sparkles } from 'lucide-react';
+import { Play, Shirt, Calendar, Trophy, Award, Settings as SettingsIcon, Coins, Sparkles, RotateCw } from 'lucide-react';
 import { storage } from '../utils/storage';
 import { sound } from '../game/audio';
 
@@ -12,6 +10,8 @@ export function MainMenu({
   onOpenAchievements,
   onOpenLeaderboard,
   onOpenSettings,
+  isPortrait,
+  onRotate,
 }) {
   const [bestScore] = React.useState(storage.getBestScore());
   const [totalCoins] = React.useState(storage.getTotalCoins());
@@ -35,8 +35,20 @@ export function MainMenu({
           </div>
         </div>
 
-        {/* User Stats: Best Score & Coins */}
+        {/* Rotate Button & User Stats */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Rotate to Landscape Button */}
+          <button
+            onClick={() => {
+              sound.playButtonClick();
+              onRotate?.();
+            }}
+            className="glass-panel p-2 sm:p-2.5 rounded-xl hover:bg-white/10 active:scale-95 transition-all text-cyan-400 border border-cyan-500/30 flex items-center gap-1.5"
+            title="Rotate to Landscape Mode"
+          >
+            <RotateCw className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-cyan-400" />
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Rotate</span>
+          </button>
           {/* Best Score */}
           <div className="glass-panel px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl flex items-center gap-1.5 sm:gap-2.5 border border-purple-500/30">
             <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400 shrink-0" />
