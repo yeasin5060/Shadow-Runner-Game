@@ -1,0 +1,479 @@
+// Central Game Engine Hook for Shadow Runner
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import confetti from 'canvas-confetti';
+import { Player } from '../game/player';
+import { ObstacleManager } from '../game/obstacles';
+import { PowerupManager } from '../game/powerups';
+import { ParticleSystem } from '../game/particles';
+import { ScoreSystem } from '../game/score';
+import { ParallaxBackground } from '../game/background';
+import { handleCollisions } from '../game/collision';
+import { sound } from '../game/audio';
+import { storage } from '../utils/storage';
+
+export function useGameEngine() {
+  const canvasRef = useRef(null);
+
+  // High-level Game States
+  const [gameState, setGameState] = useState('MENU'); // 'MENU' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'
+  const [selectedSkin, setSelectedSkin] = useState(storage.getSelectedSkin());
+  const [scoreData, setScoreData] = useState({
+    distance: 0,
+    coins: 0,
+    score: 0,
+    bestScore: storage.getBestScore(),
+    level: 1,
+    levelName: 'Beginner',
+    levelTitle: 'Twilight Forest',
+    multiplier: 1,
+  });
+
+  const [powerupStatus, setPowerupStatus] = useState({
+    shield: false,
+    magnet: false,
+    magnetTimer: 0,
+    magnetMax: 8.0,
+    speedBoost: false,
+    speedBoostTimer: 0,
+    speedBoostMax: 5.0,
+  });
+
+  const [toastNotification, setToastNotification] = useState(null);
+  const [isNewHighScore, setIsNewHighScore] = useState(false);
+
+  // Engine Internals Refs
+  const engineRef = useRef({
+    player: null,
+    obstacles: null,
+    powerups: null,
+    particles: null,
+    score: null,
+    background: null,
+    groundY: 0,
+    lastTime: 0,
+    animationFrameId: null,
+    isRunning: false,
+    powerupsUsedCount: 0,
+  });
+
+  const showToast = useCallback((title, message, icon = 'Award') => {
+    setToastNotification({ title, message, icon });
+    setTimeout(() => {
+      setToastNotification(null);
+    }, 3800);
+  }, []);
+
+  // Check achievements helper
+  const checkAchievements = useCallback((stats) => {
+    if (stats.isFirstRun) {
+      const ach = storage.unlockAchievement('first_run');
+      if (ach) showToast('Achievement Unlocked!', ach.title);
+    }
+    if (stats.distance >= 500) {
+      const ach = storage.unlockAchievement('reach_500m');
+      if (ach) showToast('Achievement Unlocked!', ach.title);
+    }
+    if (stats.distance >= 1500) {
+      const ach = storage.unlockAchievement('reach_1500m');
+      if (ach) showToast('Achievement Unlocked!', ach.title);
+    }
+    if (stats.doubleJumps >= 20) {
+      const ach = storage.unlockAchievement('double_jumper');
+      if (ach) showToast('Achievement Unlocked!', ach.title);
+    }
+    if (storage.getTotalCoins() >= 100) {
+      const ach = storage.unlockAchievement('coin_hoarder');
+      if (ach) showToast('Achievement Unlocked!', ach.title);
+    }
+    if (stats.speedBoosts >= 3) {
+      const ach = storage.unlockAchievement('speed_demon');
+      if (ach) showToast('Achievement Unlocked!', ach.title);
+    }
+  }, [showToast]);
+
+  // Initialize or Reset Engine
+  const initEngine = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const width = canvas.width || window.innerWidth;
+    const height = canvas.height || window.innerHeight;
+    const groundY = Math.max(160, height - Math.min(110, Math.floor(height * 0.22)));
+
+    const player = new Player(width, height, groundY);
+    player.setSkin(selectedSkin);
+
+    const obstacles = new ObstacleManager();
+    const powerups = new PowerupManager();
+    const particles = new ParticleSystem();
+    const score = new ScoreSystem();
+    const background = new ParallaxBackground(width, height, groundY);
+
+    score.onLevelUpCallback = (lvl) => {
+      showToast(`Level ${lvl.level} Reached!`, lvl.title, 'Zap');
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 },
+      });
+    };
+
+    engineRef.current = {
+      player,
+      obstacles,
+      powerups,
+      particles,
+      score,
+      background,
+      groundY,
+      lastTime: performance.now(),
+      animationFrameId: null,
+      isRunning: false,
+      powerupsUsedCount: 0,
+    };
+  }, [selectedSkin, showToast]);
+
+  // Handle Game Over
+  const handleGameOver = useCallback(() => {
+    const engine = engineRef.current;
+    engine.isRunning = false;
+    sound.stopBgm();
+
+    const finalScore = engine.score.score;
+    const previousBest = storage.getBestScore();
+    const isNewRecord = finalScore > previousBest && finalScore > 0;
+
+    setIsNewHighScore(isNewRecord);
+    if (isNewRecord) {
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.5 },
+      });
+    }
+
+    // Save score to leaderboard
+    storage.saveLeaderboardScore('You', finalScore, engine.score.distance);
+
+    // Update Daily Challenge
+    storage.updateDailyChallenge('distance', Math.floor(engine.score.distance));
+    storage.updateDailyChallenge('coins', engine.score.coins);
+    storage.updateDailyChallenge('doubleJumps', engine.player.totalDoubleJumps);
+    storage.updateDailyChallenge('powerups', engine.powerupsUsedCount);
+
+    // Achievements check
+    checkAchievements({
+      isFirstRun: true,
+      distance: engine.score.distance,
+      doubleJumps: engine.player.totalDoubleJumps,
+      coins: engine.score.coins,
+      speedBoosts: engine.powerupsUsedCount,
+    });
+
+    setGameState('GAMEOVER');
+  }, [checkAchievements]);
+
+  // Game Loop
+  const gameLoop = useCallback((timestamp) => {
+    const engine = engineRef.current;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    if (!engine.isRunning) {
+      // Still draw background & player idle in menu or paused
+      if (engine.background && engine.player) {
+        engine.background.draw(ctx, engine.score ? engine.score.currentLevel.bgTheme : {
+          skyGradient: ['#070712', '#151028', '#23153c'],
+          mountainColor: '#0f0c1d',
+          midgroundColor: '#17132a',
+          groundColor: '#100c22',
+          groundAccent: '#a855f7',
+          moonColor: '#e9d5ff',
+          moonGlow: 'rgba(168, 85, 247, 0.4)',
+          gridColor: 'rgba(168, 85, 247, 0.15)',
+        });
+        engine.player.draw(ctx, engine.powerups ? engine.powerups.active : {});
+      }
+      return;
+    }
+
+    // Delta time in seconds, capped to 0.05s to prevent quantum tunneling on tab switch
+    const dt = Math.min((timestamp - engine.lastTime) / 1000, 0.05);
+    engine.lastTime = timestamp;
+
+    const { player, obstacles, powerups, particles, score, background, groundY } = engine;
+    const currentLevel = score.currentLevel;
+    const isSpeedBoost = powerups.active.speedBoost;
+
+    // Calculate game movement speed
+    const baseSpeed = currentLevel.baseSpeed;
+    const gameSpeed = isSpeedBoost ? baseSpeed * 1.55 : baseSpeed;
+
+    // 1. Update Game Systems
+    background.update(gameSpeed, dt);
+    player.update(dt, groundY, particles, powerups.active);
+    powerups.update(dt, gameSpeed, player, particles);
+    obstacles.update(dt, timestamp, gameSpeed, currentLevel, groundY, player, powerups.active.magnet);
+    particles.update(dt);
+    score.update(dt, gameSpeed, isSpeedBoost);
+
+    // Powerup count tracker
+    if (isSpeedBoost && !engine.hadSpeedBoost) {
+      engine.powerupsUsedCount++;
+      engine.hadSpeedBoost = true;
+    } else if (!isSpeedBoost) {
+      engine.hadSpeedBoost = false;
+    }
+
+    // 2. Collision Handling
+    handleCollisions({
+      player,
+      obstacleManager: obstacles,
+      powerupManager: powerups,
+      particleSystem: particles,
+      onGameOver: handleGameOver,
+      onCoinCollected: () => {
+        score.addCoin();
+      },
+      onShieldSaved: () => {
+        const ach = storage.unlockAchievement('shield_savior');
+        if (ach) showToast('Achievement Unlocked!', ach.title);
+      },
+    });
+
+    // 3. Render Scene
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    background.draw(ctx, currentLevel.bgTheme);
+    obstacles.draw(ctx, currentLevel.bgTheme.groundAccent);
+    powerups.draw(ctx);
+    player.draw(ctx, powerups.active);
+    particles.draw(ctx);
+
+    // 4. Push React state updates throttle (every 3 frames)
+    if (Math.floor(timestamp / 50) % 2 === 0) {
+      setScoreData({
+        distance: Math.floor(score.distance),
+        coins: score.coins,
+        score: score.score,
+        bestScore: score.bestScore,
+        level: currentLevel.level,
+        levelName: currentLevel.name,
+        levelTitle: currentLevel.title,
+        multiplier: score.scoreMultiplier,
+      });
+
+      setPowerupStatus({
+        ...powerups.active,
+      });
+    }
+
+    // Continue loop
+    engine.animationFrameId = requestAnimationFrame(gameLoop);
+  }, [handleGameOver, showToast]);
+
+  // Start Playing Game
+  const startGame = useCallback(() => {
+    initEngine();
+    const engine = engineRef.current;
+    engine.isRunning = true;
+    engine.lastTime = performance.now();
+    sound.startBgm();
+    sound.updateTempo(1);
+    setGameState('PLAYING');
+
+    if (engine.animationFrameId) {
+      cancelAnimationFrame(engine.animationFrameId);
+    }
+    engine.animationFrameId = requestAnimationFrame(gameLoop);
+  }, [initEngine, gameLoop]);
+
+  // Pause / Resume
+  const togglePause = useCallback(() => {
+    if (gameState === 'PLAYING') {
+      engineRef.current.isRunning = false;
+      sound.stopBgm();
+      setGameState('PAUSED');
+    } else if (gameState === 'PAUSED') {
+      engineRef.current.isRunning = true;
+      engineRef.current.lastTime = performance.now();
+      sound.startBgm();
+      setGameState('PLAYING');
+      engineRef.current.animationFrameId = requestAnimationFrame(gameLoop);
+    }
+  }, [gameState, gameLoop]);
+
+  // Restart Game
+  const restartGame = useCallback(() => {
+    startGame();
+  }, [startGame]);
+
+  // Return to Main Menu
+  const goToMenu = useCallback(() => {
+    engineRef.current.isRunning = false;
+    sound.stopBgm();
+    if (engineRef.current.animationFrameId) {
+      cancelAnimationFrame(engineRef.current.animationFrameId);
+    }
+    setGameState('MENU');
+  }, []);
+
+  // Change Skin
+  const changeSkin = useCallback((skinId) => {
+    setSelectedSkin(skinId);
+    storage.setSelectedSkin(skinId);
+    if (engineRef.current.player) {
+      engineRef.current.player.setSkin(skinId);
+    }
+  }, []);
+
+  // Jump Action
+  const triggerJump = useCallback(() => {
+    if (gameState !== 'PLAYING') return;
+    const engine = engineRef.current;
+    if (engine.player) {
+      engine.player.jump(engine.particles);
+    }
+  }, [gameState]);
+
+  // Slide Action
+  const triggerSlide = useCallback(() => {
+    if (gameState !== 'PLAYING') return;
+    const engine = engineRef.current;
+    if (engine.player) {
+      engine.player.slide();
+    }
+  }, [gameState]);
+
+  // Stop Slide
+  const triggerStopSlide = useCallback(() => {
+    if (gameState !== 'PLAYING') return;
+    const engine = engineRef.current;
+    if (engine.player) {
+      engine.player.stopSlide();
+    }
+  }, [gameState]);
+
+  // Keyboard Event Listeners
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.repeat && (e.code === 'Space' || e.code === 'ArrowUp')) return;
+
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        if (gameState === 'PLAYING') {
+          triggerJump();
+        } else if (gameState === 'MENU' || gameState === 'GAMEOVER') {
+          startGame();
+        }
+      } else if (e.code === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        triggerSlide();
+      } else if (e.code === 'KeyP' || e.code === 'Escape') {
+        e.preventDefault();
+        togglePause();
+      } else if (e.code === 'KeyM') {
+        const cur = storage.getSettings();
+        const updated = { ...cur, soundEnabled: !cur.soundEnabled, musicEnabled: !cur.soundEnabled };
+        storage.saveSettings(updated);
+        sound.setSoundEnabled(updated.soundEnabled);
+        sound.setMusicEnabled(updated.musicEnabled);
+        showToast('Audio Settings', updated.soundEnabled ? 'Sound Unmuted' : 'Sound Muted');
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      if (e.code === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        triggerStopSlide();
+      }
+    };
+
+    // Screen click / tap anywhere to jump during gameplay
+    const handlePointerDown = (e) => {
+      if (gameState !== 'PLAYING') return;
+      // Ignore clicks on interactive buttons (e.g., Pause, Mute, Slide)
+      if (e.target && e.target.closest && e.target.closest('button, a, input')) {
+        return;
+      }
+      if (e.button === 0 || e.pointerType === 'touch') {
+        triggerJump();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [gameState, triggerJump, triggerSlide, triggerStopSlide, togglePause, startGame, showToast]);
+
+  // Resize canvas handling
+  useEffect(() => {
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      // Full viewport width and height
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      canvas.width = w;
+      canvas.height = h;
+
+      const groundY = Math.max(160, h - Math.min(110, Math.floor(h * 0.22)));
+      if (engineRef.current.player) {
+        engineRef.current.player.canvasWidth = w;
+        engineRef.current.player.canvasHeight = h;
+        engineRef.current.player.groundY = groundY;
+        engineRef.current.player.x = Math.max(50, Math.min(120, Math.floor(w * 0.15)));
+      }
+      if (engineRef.current.background) {
+        engineRef.current.background.resize(w, h, groundY);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
+
+  // Initial draw on mount
+  useEffect(() => {
+    initEngine();
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx && engineRef.current.background) {
+        engineRef.current.background.draw(ctx, engineRef.current.score.currentLevel.bgTheme);
+        engineRef.current.player.draw(ctx, {});
+      }
+    }
+  }, [initEngine]);
+
+  return {
+    canvasRef,
+    gameState,
+    scoreData,
+    powerupStatus,
+    selectedSkin,
+    toastNotification,
+    isNewHighScore,
+    startGame,
+    togglePause,
+    restartGame,
+    goToMenu,
+    changeSkin,
+    triggerJump,
+    triggerSlide,
+    triggerStopSlide,
+    showToast,
+  };
+}
