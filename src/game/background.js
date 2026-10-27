@@ -29,9 +29,9 @@ export class ParallaxBackground {
     // 2. High-Altitude Cirrus & Volumetric Clouds with Responsive Positioning
     this.initClouds(canvasWidth, canvasHeight, groundY);
 
-    // 4. Delicate Bioluminescent Fireflies (আসল জোনাকি পোকা - কোনো বাবল বা বৃত্ত নয়)
+    // 4. Delicate Bioluminescent Fireflies
     this.fireflies = [];
-    for (let i = 0; i < 36; i++) {
+    for (let i = 0; i < 18; i++) {
       this.fireflies.push({
         x: Math.random() * canvasWidth,
         y: 60 + Math.random() * (groundY - 70),
@@ -224,10 +224,14 @@ export class ParallaxBackground {
 
       if (star.size > 1.8) {
         // Bright Diamond Star with 4-Point Diffraction Cross Spikes
-        ctx.shadowColor = '#c4b5fd';
-        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size + 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(196, 181, 253, 0.4)';
+        ctx.fill();
+
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
         ctx.fill();
 
         ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.75})`;
@@ -239,7 +243,6 @@ export class ParallaxBackground {
         ctx.lineTo(star.x, star.y + 5);
         ctx.stroke();
       } else {
-        ctx.shadowBlur = 0;
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
         ctx.fill();
@@ -360,9 +363,7 @@ export class ParallaxBackground {
 
       // 3. Bright Silver Moonlight Rim Highlight on Upper Crests
       ctx.strokeStyle = `rgba(255, 255, 255, ${cloud.alpha * 0.88})`;
-      ctx.lineWidth = 2.6;
-      ctx.shadowColor = levelTheme.moonColor;
-      ctx.shadowBlur = 12;
+      ctx.lineWidth = 2.2;
       for (const puff of cloud.puffs) {
         const px = cx + puff.rx * cloud.width;
         const py = cy + puff.ry * cloud.height;
@@ -531,9 +532,7 @@ export class ParallaxBackground {
 
     // 9. Ultra-thin Specular Sunlit Rim Crescent on Exterior Edge
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.8;
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = 12;
+    ctx.lineWidth = 1.6;
     ctx.beginPath();
     ctx.arc(moonX, moonY, moonRadius, Math.PI * 0.85, Math.PI * 1.65);
     ctx.stroke();
@@ -575,11 +574,14 @@ export class ParallaxBackground {
       ctx.ellipse(0.6, 0, 1.2, 0.8, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Glowing bioluminescent abdomen lantern (sharp point light, no giant bubble disc)
-      ctx.globalAlpha = alpha;
+      // Glowing bioluminescent abdomen lantern (fast clean rendering)
       ctx.fillStyle = glowColor;
-      ctx.shadowColor = glowColor;
-      ctx.shadowBlur = 5 + intensity * 6; // Focused point light glow
+      ctx.beginPath();
+      ctx.arc(-0.8, 0, f.size * 1.8, 0, Math.PI * 2);
+      ctx.globalAlpha = alpha * 0.35;
+      ctx.fill();
+
+      ctx.globalAlpha = alpha;
       ctx.beginPath();
       ctx.arc(-0.8, 0, f.size * 0.85, 0, Math.PI * 2);
       ctx.fill();
@@ -644,20 +646,16 @@ export class ParallaxBackground {
     });
 
     // 5. Texturized Rocky Crest & Moonlit Edge Line
-    // Rich textured crest tracing the natural rock shelves
     ctx.strokeStyle = levelTheme.groundAccent;
-    ctx.lineWidth = 3.2;
-    ctx.shadowColor = levelTheme.groundAccent;
-    ctx.shadowBlur = 18;
+    ctx.lineWidth = 2.6;
     ctx.beginPath();
     ctx.moveTo(0, gy);
     ctx.lineTo(w, gy);
     ctx.stroke();
 
     // Secondary Moonlit Silver Moss Crest Line
-    ctx.strokeStyle = 'rgba(240, 245, 255, 0.55)';
-    ctx.lineWidth = 1.2;
-    ctx.shadowBlur = 6;
+    ctx.strokeStyle = 'rgba(240, 245, 255, 0.4)';
+    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, gy - 0.5);
     ctx.lineTo(w, gy - 0.5);
@@ -800,13 +798,10 @@ export class ParallaxBackground {
     const winH = 14;
 
     ctx.fillStyle = '#fbbf24';
-    ctx.shadowColor = '#f59e0b';
-    ctx.shadowBlur = 14;
     ctx.fillRect(winX, winY, winW, winH);
 
     ctx.strokeStyle = '#3b2310';
     ctx.lineWidth = 1.5;
-    ctx.shadowBlur = 0;
     ctx.beginPath();
     ctx.moveTo(winX + winW * 0.5, winY);
     ctx.lineTo(winX + winW * 0.5, winY + winH);
@@ -818,8 +813,6 @@ export class ParallaxBackground {
     // Red Front Lantern near Door
     ctx.save();
     ctx.fillStyle = '#ef4444';
-    ctx.shadowColor = '#ef4444';
-    ctx.shadowBlur = 12;
     ctx.beginPath();
     ctx.arc(x + 38, y + 22, 3.5, 0, Math.PI * 2);
     ctx.fill();
@@ -867,8 +860,6 @@ export class ParallaxBackground {
     // Glowing Pagoda Window
     ctx.save();
     ctx.fillStyle = '#00f5ff';
-    ctx.shadowColor = '#00f5ff';
-    ctx.shadowBlur = 12;
     ctx.fillRect(x + 20, baseY - 42, 8, 8);
     ctx.restore();
 

@@ -35,13 +35,15 @@ export class Coin {
   draw(ctx) {
     if (this.collected) return;
 
-    ctx.save();
     const floatY = this.y + Math.sin(this.animTimer) * 3;
     const pulse = Math.abs(Math.sin(this.animTimer));
     const currentRadius = this.radius * (0.85 + pulse * 0.15);
 
-    ctx.shadowColor = '#fbbf24';
-    ctx.shadowBlur = 14;
+    // Outer soft glow halo (hardware-accelerated, 0ms blur cost)
+    ctx.beginPath();
+    ctx.arc(this.x, floatY, currentRadius + 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(251, 191, 36, 0.28)';
+    ctx.fill();
 
     // Outer gold ring
     ctx.beginPath();
@@ -58,8 +60,6 @@ export class Coin {
     // Center shadow glyph
     ctx.fillStyle = '#78350f';
     ctx.fillRect(this.x - 2, floatY - 4, 4, 8);
-
-    ctx.restore();
   }
 
   getHitbox() {
@@ -138,9 +138,7 @@ export class Obstacle {
         // Jagged dark obsidian boulder with glowing cracks
         ctx.fillStyle = '#171726';
         ctx.strokeStyle = groundAccent;
-        ctx.lineWidth = 2;
-        ctx.shadowColor = groundAccent;
-        ctx.shadowBlur = 8;
+        ctx.lineWidth = 2.2;
 
         ctx.beginPath();
         ctx.moveTo(ox + 4, oy + oh);
@@ -168,8 +166,6 @@ export class Obstacle {
         ctx.fillStyle = '#1e1c2e';
         ctx.strokeStyle = '#38bdf8';
         ctx.lineWidth = 2;
-        ctx.shadowColor = '#00f5ff';
-        ctx.shadowBlur = 10;
 
         ctx.beginPath();
         ctx.roundRect(ox, oy, ow, oh, 5);
@@ -185,7 +181,7 @@ export class Obstacle {
         ctx.lineTo(ox + 6, oy + oh - 6);
         ctx.stroke();
 
-        // Glowing center core
+        // Center core
         ctx.fillStyle = '#38bdf8';
         ctx.beginPath();
         ctx.arc(ox + ow / 2, oy + oh / 2, 5, 0, Math.PI * 2);
@@ -198,8 +194,6 @@ export class Obstacle {
         ctx.fillStyle = '#181824';
         ctx.strokeStyle = '#ef4444';
         ctx.lineWidth = 2;
-        ctx.shadowColor = '#ff3344';
-        ctx.shadowBlur = 12;
 
         const spikeCount = 3;
         const spikeW = ow / spikeCount;
@@ -218,38 +212,45 @@ export class Obstacle {
       }
 
       case 'laser': {
-        // High-energy electric laser barrier
+        // High-energy electric laser barrier with multi-layer bloom
         ctx.fillStyle = '#111827';
         // Base and top emitter posts
         ctx.fillRect(ox - 3, oy + oh - 10, ow + 6, 10);
         ctx.fillRect(ox - 3, oy, ow + 6, 10);
 
-        // Pulsing beam
+        // Soft outer energy glow beam (no shadowBlur needed!)
         const beamPulse = Math.sin(this.animTimer * 18);
-        ctx.strokeStyle = '#ff0055';
-        ctx.lineWidth = 6 + beamPulse * 2;
-        ctx.shadowColor = '#ff0055';
-        ctx.shadowBlur = 20;
-
+        ctx.strokeStyle = 'rgba(255, 0, 85, 0.35)';
+        ctx.lineWidth = 10 + beamPulse * 2;
         ctx.beginPath();
         ctx.moveTo(ox + ow / 2, oy + 10);
         ctx.lineTo(ox + ow / 2, oy + oh - 10);
         ctx.stroke();
 
-        // White core
+        // Vivid inner laser beam
+        ctx.strokeStyle = '#ff0055';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(ox + ow / 2, oy + 10);
+        ctx.lineTo(ox + ow / 2, oy + oh - 10);
+        ctx.stroke();
+
+        // White hot plasma core
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(ox + ow / 2, oy + 10);
         ctx.lineTo(ox + ow / 2, oy + oh - 10);
-        // Electric crackling spark arcs
-        if (Math.random() < 0.4) {
+        ctx.stroke();
+
+        // Electric spark arcs
+        if (Math.random() < 0.3) {
           const arcY = oy + 10 + Math.random() * (oh - 20);
           ctx.strokeStyle = '#00f5ff';
-          ctx.lineWidth = 1.8;
+          ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.moveTo(ox + ow / 2, arcY);
-          ctx.lineTo(ox + ow / 2 + (Math.random() - 0.5) * 16, arcY + (Math.random() - 0.5) * 10);
+          ctx.lineTo(ox + ow / 2 + (Math.random() - 0.5) * 14, arcY + (Math.random() - 0.5) * 8);
           ctx.stroke();
         }
         break;
@@ -275,8 +276,6 @@ export class Obstacle {
         ctx.fillStyle = '#111222';
         ctx.strokeStyle = '#a855f7';
         ctx.lineWidth = 2;
-        ctx.shadowColor = '#c084fc';
-        ctx.shadowBlur = 14;
 
         // Drone main fuselage
         ctx.beginPath();
@@ -284,15 +283,13 @@ export class Obstacle {
         ctx.fill();
         ctx.stroke();
 
-        // Spinning red sensor eye
+        // Sensor eye
         ctx.fillStyle = '#ef4444';
-        ctx.shadowColor = '#ef4444';
-        ctx.shadowBlur = 12;
         ctx.beginPath();
         ctx.arc(ox + ow / 2 + Math.sin(this.animTimer * 6) * 6, oy + oh / 2, 4.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Wings / Blades with spinning blur
+        // Wings / Blades
         ctx.strokeStyle = '#00f5ff';
         ctx.lineWidth = 2;
         const wingPulse = Math.sin(this.animTimer * 25) * 8;

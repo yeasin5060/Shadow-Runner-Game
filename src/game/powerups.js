@@ -56,14 +56,21 @@ export class PowerupToken {
     const cx = this.x + this.width / 2;
     const cy = floatY + this.height / 2;
 
-    // Outer glow aura
-    ctx.shadowColor = this.type.glowColor;
-    ctx.shadowBlur = 18;
-    ctx.fillStyle = 'rgba(15, 15, 30, 0.9)';
-    ctx.strokeStyle = this.type.color;
-    ctx.lineWidth = 2.5;
+    // Outer glow aura (hardware-accelerated, 0ms blur cost)
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 22);
+    ctx.lineTo(cx + 22, cy);
+    ctx.lineTo(cx, cy + 22);
+    ctx.lineTo(cx - 22, cy);
+    ctx.closePath();
+    ctx.fillStyle = this.type.glowColor ? this.type.glowColor.replace('0.9', '0.25') : 'rgba(0, 245, 255, 0.25)';
+    ctx.fill();
 
     // Diamond shaped token
+    ctx.fillStyle = 'rgba(15, 15, 30, 0.9)';
+    ctx.strokeStyle = this.type.color;
+    ctx.lineWidth = 2.2;
+
     ctx.beginPath();
     ctx.moveTo(cx, cy - 18);
     ctx.lineTo(cx + 18, cy);

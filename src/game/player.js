@@ -23,9 +23,9 @@ export class Player {
     this.x = Math.max(50, Math.min(130, Math.floor(canvasWidth * 0.16)));
     this.y = groundY - this.height;
     this.vy = 0;
-    this.gravity = 0.74;
-    this.jumpForce = -13.8;
-    this.doubleJumpForce = -12.4;
+    this.gravity = 0.82;
+    this.jumpForce = -14.6;
+    this.doubleJumpForce = -13.0;
 
     // State & Input Responsiveness
     this.isGrounded = true;
@@ -309,8 +309,6 @@ export class Player {
     ctx.save();
     ctx.strokeStyle = accentColor;
     ctx.lineWidth = 2.2;
-    ctx.shadowColor = accentColor;
-    ctx.shadowBlur = 10;
     ctx.beginPath();
     for (let i = 0; i < this.eyeTrails.length; i++) {
       const pt = this.eyeTrails[i];
@@ -323,10 +321,8 @@ export class Player {
     // 2. Draw Speed Ghost Trails
     for (const trail of this.ghostTrails) {
       ctx.save();
-      ctx.globalAlpha = trail.alpha;
+      ctx.globalAlpha = trail.alpha * 0.75;
       ctx.fillStyle = trail.color;
-      ctx.shadowColor = trail.color;
-      ctx.shadowBlur = 12;
       ctx.translate(trail.x + trail.width / 2, trail.y + trail.height / 2);
       ctx.scale(trail.scaleX, trail.scaleY);
       ctx.rotate(trail.angle);
@@ -352,9 +348,6 @@ export class Player {
 
     const hw = this.width / 2;
     const hh = this.height / 2;
-
-    ctx.shadowColor = skinColor;
-    ctx.shadowBlur = activePowerups.speedBoost ? 22 : 12;
 
     if (this.isFlipping) {
       // --- DOUBLE JUMP: 360° ACROBATIC NINJA SOMERSAULT FLIP ---
@@ -383,8 +376,6 @@ export class Player {
     ctx.save();
     ctx.strokeStyle = accentColor;
     ctx.lineWidth = 3;
-    ctx.shadowColor = accentColor;
-    ctx.shadowBlur = 18;
     ctx.beginPath();
     ctx.arc(0, 0, 30, Math.PI * 0.2, Math.PI * 1.8);
     ctx.stroke();
@@ -418,8 +409,6 @@ export class Player {
 
     // Glowing Visor Eye in Somersault
     ctx.fillStyle = accentColor;
-    ctx.shadowColor = accentColor;
-    ctx.shadowBlur = 12;
     ctx.fillRect(8, -8, 7, 2.8);
 
     // Tucked Knees with Knee Guards (Tateage)
@@ -436,8 +425,6 @@ export class Player {
     // Drawn Cyber Ninjato Extended
     ctx.strokeStyle = accentColor;
     ctx.lineWidth = 2.8;
-    ctx.shadowColor = accentColor;
-    ctx.shadowBlur = 14;
     ctx.beginPath();
     ctx.moveTo(2, 6);
     ctx.lineTo(26, -14);
@@ -460,8 +447,6 @@ export class Player {
     ctx.save();
     ctx.strokeStyle = '#fbbf24';
     ctx.lineWidth = 1.8;
-    ctx.shadowColor = '#f59e0b';
-    ctx.shadowBlur = 10;
     const now = Date.now() / 1000;
     for (let i = 0; i < 4; i++) {
       const sparkLen = 8 + Math.sin(now * 30 + i * 2) * 5;
@@ -492,8 +477,6 @@ export class Player {
     // Sole Friction Glow
     ctx.strokeStyle = accentColor;
     ctx.lineWidth = 1.5;
-    ctx.shadowColor = accentColor;
-    ctx.shadowBlur = 8;
     ctx.beginPath();
     ctx.moveTo(-hw - 22, hh - 1);
     ctx.lineTo(-hw - 10, hh - 1);
@@ -514,8 +497,6 @@ export class Player {
 
     // Knee Guard (Tateage)
     ctx.fillStyle = skinColor;
-    ctx.shadowColor = skinColor;
-    ctx.shadowBlur = 8;
     ctx.beginPath();
     ctx.arc(14, hh - 8, 3.5, 0, Math.PI * 2);
     ctx.fill();
@@ -549,8 +530,6 @@ export class Player {
 
     // Glowing Power Core on Belt
     ctx.fillStyle = accentColor;
-    ctx.shadowColor = accentColor;
-    ctx.shadowBlur = 12;
     ctx.beginPath();
     ctx.arc(0, hh - 16, 2.8, 0, Math.PI * 2);
     ctx.fill();
@@ -573,8 +552,6 @@ export class Player {
     ctx.fill();
 
     ctx.fillStyle = '#00f5ff';
-    ctx.shadowColor = '#00f5ff';
-    ctx.shadowBlur = 8;
     ctx.fillRect(21, hh - 2, 3, 2);
     ctx.restore();
 
@@ -588,8 +565,6 @@ export class Player {
     // Razor Damascus Steel Blade Edge
     ctx.strokeStyle = accentColor;
     ctx.lineWidth = 2.4;
-    ctx.shadowColor = accentColor;
-    ctx.shadowBlur = 14;
     ctx.beginPath();
     ctx.moveTo(swordHiltX, swordHiltY);
     ctx.lineTo(swordTipX, swordTipY);
@@ -636,8 +611,6 @@ export class Player {
     ctx.fillRect(headX + 3, headY - 2, 8, 4);
 
     ctx.fillStyle = accentColor;
-    ctx.shadowColor = accentColor;
-    ctx.shadowBlur = 14;
     ctx.fillRect(headX + 4, headY - 1, 6.5, 2.4);
 
     ctx.fillStyle = '#ffffff';
@@ -723,8 +696,6 @@ export class Player {
     // Glowing Plasma Edge Hamon Line
     ctx.strokeStyle = accentColor;
     ctx.lineWidth = 1.6;
-    ctx.shadowColor = accentColor;
-    ctx.shadowBlur = 10;
     ctx.beginPath();
     ctx.moveTo(swordBaseX + 2, swordBaseY - 2);
     ctx.lineTo(swordTipX, swordTipY);
@@ -785,8 +756,6 @@ export class Player {
 
     // Glowing Biometric Power Core Reactor
     ctx.fillStyle = accentColor;
-    ctx.shadowColor = accentColor;
-    ctx.shadowBlur = 12;
     ctx.beginPath();
     ctx.arc(0, torsoY + 23.5, 3.2, 0, Math.PI * 2);
     ctx.fill();
@@ -821,8 +790,6 @@ export class Player {
 
     // Articulated Knee Guard (Tateage)
     ctx.fillStyle = skinColor;
-    ctx.shadowColor = skinColor;
-    ctx.shadowBlur = 8;
     ctx.beginPath();
     ctx.arc(kneeRX, kneeRY, 3.6, 0, Math.PI * 2);
     ctx.fill();
@@ -906,13 +873,10 @@ export class Player {
     ctx.fillRect(headX + 2, headY - 1, 9, 4.5);
 
     ctx.fillStyle = accentColor;
-    ctx.shadowColor = accentColor;
-    ctx.shadowBlur = 14;
     ctx.fillRect(headX + 4, headY, 7, 2.6);
 
     // Specular Visor Lens Flare
     ctx.fillStyle = '#ffffff';
-    ctx.shadowBlur = 4;
     ctx.fillRect(headX + 5, headY + 0.4, 2, 1.2);
 
     // ==========================================
@@ -955,8 +919,6 @@ export class Player {
     // Cyber Kunai Dagger in Hand
     ctx.strokeStyle = accentColor;
     ctx.lineWidth = 2.4;
-    ctx.shadowColor = accentColor;
-    ctx.shadowBlur = 12;
     ctx.beginPath();
     ctx.moveTo(handX, handY);
     ctx.lineTo(handX + 11, handY + 6);
@@ -976,8 +938,6 @@ export class Player {
     if (points.length < 2) return;
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 10;
     ctx.lineWidth = width;
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y - width * 0.5);
@@ -998,11 +958,15 @@ export class Player {
     if (activePowerups.shield) {
       const shieldRadius = Math.max(this.width, this.height) * 0.78 + Math.sin(Date.now() / 140) * 3;
       ctx.save();
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 2.5;
-      ctx.shadowColor = '#00f5ff';
-      ctx.shadowBlur = 22;
+      // Outer subtle energy field ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, shieldRadius + 3, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0, 245, 255, 0.35)';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
 
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(cx, cy, shieldRadius, 0, Math.PI * 2);
       ctx.stroke();
@@ -1025,10 +989,8 @@ export class Player {
     if (activePowerups.magnet) {
       const pulse = (Date.now() / 22) % 45;
       ctx.save();
-      ctx.strokeStyle = '#ec4899';
+      ctx.strokeStyle = 'rgba(236, 72, 153, 0.85)';
       ctx.lineWidth = 2;
-      ctx.shadowColor = '#f43f5e';
-      ctx.shadowBlur = 14;
       ctx.globalAlpha = Math.max(0, 1 - pulse / 45);
       ctx.beginPath();
       ctx.arc(cx, cy, 26 + pulse, 0, Math.PI * 2);
@@ -1039,16 +1001,13 @@ export class Player {
     if (activePowerups.speedBoost) {
       ctx.save();
       ctx.strokeStyle = '#00f5ff';
-      ctx.lineWidth = 2.5;
-      ctx.shadowColor = '#00f5ff';
-      ctx.shadowBlur = 26;
-
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(cx + this.width, cy);
       ctx.lineTo(cx - 24, cy - 14);
       ctx.lineTo(cx - 24, cy + 14);
       ctx.closePath();
-      ctx.fillStyle = 'rgba(0, 245, 255, 0.15)';
+      ctx.fillStyle = 'rgba(0, 245, 255, 0.18)';
       ctx.fill();
       ctx.stroke();
       ctx.restore();

@@ -135,6 +135,7 @@ export function useGameEngine() {
       animationFrameId: null,
       isRunning: false,
       powerupsUsedCount: 0,
+      lastHudUpdate: 0,
       shake: { intensity: 0 },
       jumpBuffer: 0,
     };
@@ -287,8 +288,9 @@ export function useGameEngine() {
     particles.draw(ctx);
     ctx.restore();
 
-    // 4. Push React state updates throttle (every 3 frames)
-    if (Math.floor(timestamp / 50) % 2 === 0) {
+    // 4. Push React state updates cleanly throttled (~100ms interval to eliminate React render overhead)
+    if (!engine.lastHudUpdate || timestamp - engine.lastHudUpdate >= 95) {
+      engine.lastHudUpdate = timestamp;
       setScoreData({
         distance: Math.floor(score.distance),
         coins: score.coins,
